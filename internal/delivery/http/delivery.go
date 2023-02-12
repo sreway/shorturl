@@ -47,7 +47,7 @@ func (d *Delivery) Run(ctx context.Context, config *config.HTTP) error {
 		}
 		stopServer()
 	}()
-
+	d.logger.Info("http service is ready to listen and serv")
 	err := httpServer.ListenAndServe()
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err

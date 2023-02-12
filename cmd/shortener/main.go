@@ -43,7 +43,7 @@ func main() {
 	exit := make(chan int)
 
 	repoURL := repo.New()
-	service := shortener.New(repoURL, cfg.Server.ShortURL.BaseURL, cfg.Server.ShortURL.Counter)
+	service := shortener.New(repoURL, &cfg.Server.ShortURL)
 	srv := http.New(service)
 
 	go func() {

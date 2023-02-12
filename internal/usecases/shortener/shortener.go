@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"sync/atomic"
 
+	"github.com/sreway/shorturl/config"
+
 	"go.uber.org/zap"
 
 	entity "github.com/sreway/shorturl/internal/domain/url"
@@ -14,9 +16,9 @@ import (
 )
 
 type UseCase struct {
-	storage storage.URL
-	baseURL *url.URL
+	cfg     *config.ShortURL
 	counter uint64
+	storage storage.URL
 	logger  *zap.Logger
 }
 
@@ -33,8 +35,8 @@ func (uc *UseCase) CreateURL(ctx context.Context, rawURL string) (*entity.URL, e
 	id := atomic.AddUint64(&uc.counter, 1)
 
 	shortURL := &url.URL{
-		Scheme: uc.baseURL.Scheme,
-		Host:   uc.baseURL.Host,
+		Scheme: uc.cfg.BaseURL.Scheme,
+		Host:   uc.cfg.BaseURL.Host,
 	}
 
 	shortURL.Path = base62.UIntEncode(id)
@@ -66,8 +68,8 @@ func (uc *UseCase) GetURL(ctx context.Context, urlID string) (*entity.URL, error
 	}
 
 	shortURL := &url.URL{
-		Scheme: uc.baseURL.Scheme,
-		Host:   uc.baseURL.Host,
+		Scheme: uc.cfg.BaseURL.Scheme,
+		Host:   uc.cfg.BaseURL.Host,
 	}
 
 	shortURL.Path = urlID
@@ -89,12 +91,12 @@ func (uc *UseCase) GetURL(ctx context.Context, urlID string) (*entity.URL, error
 	}, nil
 }
 
-func New(s storage.URL, baseURL *url.URL, counter uint64) *UseCase {
+func New(s storage.URL, cfg *config.ShortURL) *UseCase {
 	l := logger.GetLogger()
 
 	return &UseCase{
-		counter: counter,
-		baseURL: baseURL,
+		counter: cfg.Counter,
+		cfg:     cfg,
 		storage: s,
 		logger:  l.With(zap.String("service", "shortener")),
 	}

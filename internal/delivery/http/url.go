@@ -31,6 +31,12 @@ func (d *Delivery) AddURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(b) == 0 {
+		d.logger.Error("check len body", zap.Error(ErrEmptyBody), zap.String("handler", "AddURL"))
+		HandelErrURL(w, ErrReadBody)
+		return
+	}
+
 	u, err := d.shortener.CreateURL(r.Context(), string(b))
 	if err != nil {
 		HandelErrURL(w, err)

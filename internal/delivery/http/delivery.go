@@ -5,6 +5,8 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
+
 	"go.uber.org/zap"
 
 	"github.com/sreway/shorturl/config"
@@ -15,6 +17,7 @@ import (
 type (
 	Delivery struct {
 		shortener usecases.Shortener
+		router    *chi.Mux
 		logger    *zap.Logger
 	}
 )
@@ -25,16 +28,14 @@ func New(uc usecases.Shortener) *Delivery {
 		shortener: uc,
 		logger:    l.With(zap.String("service", "http")),
 	}
+	d.router = d.initRouter()
 	return d
 }
 
 func (d *Delivery) Run(ctx context.Context, config *config.HTTP) error {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", d.ShortURL)
-
 	httpServer := &http.Server{
 		Addr:    config.Address,
-		Handler: mux,
+		Handler: d.router,
 	}
 
 	ctxServer, stopServer := context.WithCancel(context.Background())

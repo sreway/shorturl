@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/caarlos0/env/v6 v6.10.1
+	github.com/go-chi/chi/v5 v5.0.8
 	github.com/golang/mock v1.6.0
 	github.com/stretchr/testify v1.8.0
 	go.uber.org/zap v1.24.0

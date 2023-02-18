@@ -3,30 +3,29 @@ package http
 import (
 	"context"
 	"errors"
+	"golang.org/x/exp/slog"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
-
-	"go.uber.org/zap"
-
 	"github.com/sreway/shorturl/config"
 	"github.com/sreway/shorturl/internal/usecases"
-	log "github.com/sreway/shorturl/pkg/tools/logger"
 )
 
 type (
 	Delivery struct {
 		shortener usecases.Shortener
 		router    *chi.Mux
-		logger    *zap.Logger
+		logger    *slog.Logger
 	}
 )
 
 func New(uc usecases.Shortener) *Delivery {
-	l := log.GetLogger()
+	log := slog.New(slog.NewJSONHandler(os.Stdout).
+		WithAttrs([]slog.Attr{slog.String("service", "http")}))
 	d := &Delivery{
 		shortener: uc,
-		logger:    l.With(zap.String("service", "http")),
+		logger:    log,
 	}
 	d.router = d.initRouter()
 	return d
@@ -41,10 +40,10 @@ func (d *Delivery) Run(ctx context.Context, config *config.HTTP) error {
 	ctxServer, stopServer := context.WithCancel(context.Background())
 	go func() {
 		<-ctx.Done()
-		log.Info("trigger graceful shutdown http server")
+		d.logger.Info("trigger graceful shutdown http server")
 		err := httpServer.Shutdown(ctxServer)
 		if err != nil {
-			log.Fatal("shutdown http server", zap.Error(err))
+			d.logger.Error("shutdown http server", err)
 		}
 		stopServer()
 	}()

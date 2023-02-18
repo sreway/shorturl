@@ -2,18 +2,16 @@ package main
 
 import (
 	"context"
+	"golang.org/x/exp/slog"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 
-	"go.uber.org/zap"
-
 	"github.com/sreway/shorturl/config"
 	"github.com/sreway/shorturl/internal/delivery/http"
 	repo "github.com/sreway/shorturl/internal/repository/storage/cache/url"
 	"github.com/sreway/shorturl/internal/usecases/shortener"
-	log "github.com/sreway/shorturl/pkg/tools/logger"
 )
 
 func main() {
@@ -21,11 +19,15 @@ func main() {
 		err  error
 		code int
 	)
+
+	log := slog.New(slog.NewJSONHandler(os.Stdout).
+		WithAttrs([]slog.Attr{slog.String("service", "main")}))
+
 	log.Info("start app")
 
 	cfg, err := config.New()
 	if err != nil {
-		log.Fatal("new config", zap.Error(err))
+		log.Error("failed initialize config", err)
 	}
 
 	wg := new(sync.WaitGroup)
@@ -50,7 +52,7 @@ func main() {
 		defer wg.Done()
 		err = srv.Run(ctx, &cfg.Server.HTTP)
 		if err != nil {
-			log.Error("delivery run", zap.Error(err))
+			log.Error("failed run delivery", err)
 			signals <- syscall.SIGSTOP
 		}
 	}()
@@ -63,7 +65,7 @@ func main() {
 				log.Info("trigger graceful shutdown app")
 				exit <- 0
 			default:
-				log.Error("trigger shutdown app")
+				log.Info("trigger shutdown app")
 				exit <- 1
 			}
 		}

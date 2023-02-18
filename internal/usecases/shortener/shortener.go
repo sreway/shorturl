@@ -2,33 +2,29 @@ package shortener
 
 import (
 	"context"
+	"golang.org/x/exp/slog"
 	"net/url"
+	"os"
 	"sync/atomic"
 
 	"github.com/sreway/shorturl/config"
 
-	"go.uber.org/zap"
-
 	entity "github.com/sreway/shorturl/internal/domain/url"
 	"github.com/sreway/shorturl/internal/usecases/adapters/storage"
 	"github.com/sreway/shorturl/pkg/tools/base62"
-	"github.com/sreway/shorturl/pkg/tools/logger"
 )
 
 type UseCase struct {
 	cfg     *config.ShortURL
 	counter uint64
 	storage storage.URL
-	logger  *zap.Logger
+	logger  *slog.Logger
 }
 
 func (uc *UseCase) CreateURL(ctx context.Context, rawURL string) (*entity.URL, error) {
 	longURL, err := url.ParseRequestURI(rawURL)
 	if err != nil {
-		uc.logger.Error("parse long url",
-			zap.Error(err),
-			zap.String("longURL", rawURL),
-		)
+		uc.logger.Error("parse long url", err, slog.String("longURL", rawURL))
 		return nil, ErrParseURL
 	}
 
@@ -43,10 +39,8 @@ func (uc *UseCase) CreateURL(ctx context.Context, rawURL string) (*entity.URL, e
 
 	err = uc.storage.Add(ctx, id, longURL)
 	if err != nil {
-		uc.logger.Error("store url",
-			zap.Error(err),
-			zap.Uint64("id", id),
-			zap.String("longURL", longURL.String()),
+		uc.logger.Error("store url", err, slog.Uint64("id", id),
+			slog.String("longURL", longURL.String()),
 		)
 		return nil, err
 	}
@@ -61,9 +55,7 @@ func (uc *UseCase) CreateURL(ctx context.Context, rawURL string) (*entity.URL, e
 func (uc *UseCase) GetURL(ctx context.Context, urlID string) (*entity.URL, error) {
 	id, err := base62.UIntDecode(urlID)
 	if err != nil {
-		uc.logger.Error("decode short url",
-			zap.Error(err),
-		)
+		uc.logger.Error("decode short url", err)
 		return nil, ErrDecodeURL
 	}
 
@@ -76,10 +68,8 @@ func (uc *UseCase) GetURL(ctx context.Context, urlID string) (*entity.URL, error
 
 	longURL, err := uc.storage.Get(ctx, id)
 	if err != nil {
-		uc.logger.Error("get storage url",
-			zap.Error(err),
-			zap.Uint64("id", id),
-			zap.String("shortURL", shortURL.String()),
+		uc.logger.Error("get storage url", err, slog.Uint64("id", id),
+			slog.String("shortURL", shortURL.String()),
 		)
 		return nil, err
 	}
@@ -92,12 +82,12 @@ func (uc *UseCase) GetURL(ctx context.Context, urlID string) (*entity.URL, error
 }
 
 func New(s storage.URL, cfg *config.ShortURL) *UseCase {
-	l := logger.GetLogger()
-
+	log := slog.New(slog.NewJSONHandler(os.Stdout).
+		WithAttrs([]slog.Attr{slog.String("service", "shortener")}))
 	return &UseCase{
 		counter: cfg.Counter,
 		cfg:     cfg,
 		storage: s,
-		logger:  l.With(zap.String("service", "shortener")),
+		logger:  log,
 	}
 }

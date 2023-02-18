@@ -16,9 +16,7 @@ import (
 )
 
 func main() {
-	var (
-		code int
-	)
+	var code int
 
 	log := slog.New(slog.NewJSONHandler(os.Stdout).
 		WithAttrs([]slog.Attr{slog.String("service", "main")}))

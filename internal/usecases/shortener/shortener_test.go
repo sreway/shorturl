@@ -14,7 +14,7 @@ import (
 	repoMock "github.com/sreway/shorturl/internal/usecases/adapters/storage/mocks"
 )
 
-func TestUseCase_CreateURL(t *testing.T) {
+func Test_useCase_CreateURL(t *testing.T) {
 	baseURL := &url.URL{
 		Scheme: "http",
 		Host:   "localhost:8080",
@@ -100,7 +100,7 @@ func TestUseCase_CreateURL(t *testing.T) {
 	}
 }
 
-func TestUseCase_GetURL(t *testing.T) {
+func Test_useCase_GetURL(t *testing.T) {
 	baseURL := &url.URL{
 		Scheme: "http",
 		Host:   "localhost:8080",

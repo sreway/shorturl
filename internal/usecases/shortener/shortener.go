@@ -14,14 +14,14 @@ import (
 	"github.com/sreway/shorturl/internal/usecases/adapters/storage"
 )
 
-type UseCase struct {
+type useCase struct {
 	baseURL *url.URL
 	counter uint64
 	storage storage.URL
 	logger  *slog.Logger
 }
 
-func (uc *UseCase) CreateURL(ctx context.Context, rawURL string) (entity.URL, error) {
+func (uc *useCase) CreateURL(ctx context.Context, rawURL string) (entity.URL, error) {
 	longURL, err := url.ParseRequestURI(rawURL)
 	if err != nil {
 		uc.logger.Error("parse long url", err, slog.String("longURL", rawURL))
@@ -48,7 +48,7 @@ func (uc *UseCase) CreateURL(ctx context.Context, rawURL string) (entity.URL, er
 	return entity.NewURL(id, shortURL, longURL), nil
 }
 
-func (uc *UseCase) GetURL(ctx context.Context, urlID string) (entity.URL, error) {
+func (uc *useCase) GetURL(ctx context.Context, urlID string) (entity.URL, error) {
 	id, err := uintDecode(urlID)
 	if err != nil {
 		uc.logger.Error("decode short url", err)
@@ -72,10 +72,10 @@ func (uc *UseCase) GetURL(ctx context.Context, urlID string) (entity.URL, error)
 	return entity.NewURL(id, shortURL, longURL), nil
 }
 
-func New(s storage.URL, cfg config.ShortURL) *UseCase {
+func New(s storage.URL, cfg config.ShortURL) *useCase {
 	log := slog.New(slog.NewJSONHandler(os.Stdout).
 		WithAttrs([]slog.Attr{slog.String("service", "shortener")}))
-	return &UseCase{
+	return &useCase{
 		counter: cfg.GetCounter(),
 		baseURL: cfg.GetBaseURL(),
 		storage: s,

@@ -6,16 +6,16 @@ import (
 	"os"
 	"sync/atomic"
 
-	"golang.org/x/exp/slog"
+	"github.com/sreway/shorturl/internal/config"
 
-	"github.com/sreway/shorturl/config"
+	"golang.org/x/exp/slog"
 
 	entity "github.com/sreway/shorturl/internal/domain/url"
 	"github.com/sreway/shorturl/internal/usecases/adapters/storage"
 )
 
 type UseCase struct {
-	cfg     *config.ShortURL
+	baseURL *url.URL
 	counter uint64
 	storage storage.URL
 	logger  *slog.Logger
@@ -31,8 +31,8 @@ func (uc *UseCase) CreateURL(ctx context.Context, rawURL string) (*entity.URL, e
 	id := atomic.AddUint64(&uc.counter, 1)
 
 	shortURL := &url.URL{
-		Scheme: uc.cfg.BaseURL.Scheme,
-		Host:   uc.cfg.BaseURL.Host,
+		Scheme: uc.baseURL.Scheme,
+		Host:   uc.baseURL.Host,
 	}
 
 	shortURL.Path = uintEncode(id)
@@ -60,8 +60,8 @@ func (uc *UseCase) GetURL(ctx context.Context, urlID string) (*entity.URL, error
 	}
 
 	shortURL := &url.URL{
-		Scheme: uc.cfg.BaseURL.Scheme,
-		Host:   uc.cfg.BaseURL.Host,
+		Scheme: uc.baseURL.Scheme,
+		Host:   uc.baseURL.Host,
 	}
 
 	shortURL.Path = urlID
@@ -81,12 +81,12 @@ func (uc *UseCase) GetURL(ctx context.Context, urlID string) (*entity.URL, error
 	}, nil
 }
 
-func New(s storage.URL, cfg *config.ShortURL) *UseCase {
+func New(s storage.URL, cfg config.ShortURL) *UseCase {
 	log := slog.New(slog.NewJSONHandler(os.Stdout).
 		WithAttrs([]slog.Attr{slog.String("service", "shortener")}))
 	return &UseCase{
-		counter: cfg.Counter,
-		cfg:     cfg,
+		counter: cfg.GetCounter(),
+		baseURL: cfg.GetBaseURL(),
 		storage: s,
 		logger:  log,
 	}

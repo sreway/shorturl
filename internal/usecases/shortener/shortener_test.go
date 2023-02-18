@@ -6,10 +6,11 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/sreway/shorturl/internal/config"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sreway/shorturl/config"
 	entity "github.com/sreway/shorturl/internal/domain/url"
 	repoMock "github.com/sreway/shorturl/internal/usecases/adapters/storage/mocks"
 )
@@ -69,11 +70,8 @@ func TestUseCase_CreateURL(t *testing.T) {
 	ctx := context.Background()
 
 	for _, tt := range tests {
-		cfg := config.ShortURL{
-			BaseURL: baseURL,
-			Counter: tt.args.counter,
-		}
-		uc := New(repo, &cfg)
+		cfg := config.NewShortURLConfig(baseURL, tt.args.counter)
+		uc := New(repo, cfg)
 		repo.EXPECT().Add(anyMock, anyMock, anyMock).Return(nil).AnyTimes()
 
 		t.Run(tt.name, func(t *testing.T) {
@@ -184,12 +182,8 @@ func TestUseCase_GetURL(t *testing.T) {
 
 	for _, tt := range tests {
 		repo := repoMock.NewMockURL(ctl)
-		cfg := config.ShortURL{
-			BaseURL: baseURL,
-			Counter: tt.args.counter,
-		}
-
-		uc := New(repo, &cfg)
+		cfg := config.NewShortURLConfig(baseURL, tt.args.counter)
+		uc := New(repo, cfg)
 
 		repo.EXPECT().Get(anyMock, anyMock).Return(tt.args.repoResp.url, tt.args.repoResp.err).AnyTimes()
 

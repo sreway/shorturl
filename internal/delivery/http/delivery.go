@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"os"
 
-	"golang.org/x/exp/slog"
+	"github.com/sreway/shorturl/internal/config"
 
 	"github.com/go-chi/chi/v5"
+	"golang.org/x/exp/slog"
 
-	"github.com/sreway/shorturl/config"
 	"github.com/sreway/shorturl/internal/usecases"
 )
 
@@ -33,9 +33,9 @@ func New(uc usecases.Shortener) *Delivery {
 	return d
 }
 
-func (d *Delivery) Run(ctx context.Context, config *config.HTTP) error {
+func (d *Delivery) Run(ctx context.Context, config config.HTTP) error {
 	httpServer := &http.Server{
-		Addr:    config.Address,
+		Addr:    config.GetAddress(),
 		Handler: d.router,
 	}
 

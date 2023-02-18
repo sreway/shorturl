@@ -6,9 +6,10 @@ import (
 	"os/signal"
 	"sync"
 
+	"github.com/sreway/shorturl/internal/config"
+
 	"golang.org/x/exp/slog"
 
-	"github.com/sreway/shorturl/config"
 	"github.com/sreway/shorturl/internal/delivery/http"
 	repo "github.com/sreway/shorturl/internal/repository/storage/cache/url"
 	"github.com/sreway/shorturl/internal/usecases/shortener"
@@ -35,7 +36,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 
-		cfg, err := config.New()
+		cfg, err := config.NewConfig()
 		if err != nil {
 			log.Error("failed initialize config", err)
 			stop()
@@ -43,10 +44,10 @@ func main() {
 			return
 		}
 		repoURL := repo.New()
-		service := shortener.New(repoURL, &cfg.Server.ShortURL)
+		service := shortener.New(repoURL, cfg.ShortURL())
 		srv := http.New(service)
 
-		err = srv.Run(ctx, &cfg.Server.HTTP)
+		err = srv.Run(ctx, cfg.HTTP())
 		if err != nil {
 			log.Error("failed run delivery", err)
 			stop()

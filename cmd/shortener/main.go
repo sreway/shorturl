@@ -16,7 +16,9 @@ import (
 )
 
 func main() {
-	var code int
+	var (
+		code int
+	)
 
 	log := slog.New(slog.NewJSONHandler(os.Stdout).
 		WithAttrs([]slog.Attr{slog.String("service", "main")}))
@@ -35,7 +37,7 @@ func main() {
 
 	go func() {
 		defer wg.Done()
-
+		var cfg config.Config
 		cfg, err := config.NewConfig()
 		if err != nil {
 			log.Error("failed initialize config", err)

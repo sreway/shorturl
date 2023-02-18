@@ -8,8 +8,8 @@ import (
 
 type (
 	Config interface {
-		HTTP() HTTP
-		ShortURL() ShortURL
+		HTTP() *http
+		ShortURL() *shortURL
 	}
 
 	HTTP interface {
@@ -38,11 +38,11 @@ type (
 	}
 )
 
-func (c *config) HTTP() HTTP {
+func (c *config) HTTP() *http {
 	return &c.http
 }
 
-func (c *config) ShortURL() ShortURL {
+func (c *config) ShortURL() *shortURL {
 	return &c.shortURL
 }
 
@@ -62,7 +62,7 @@ func (s *shortURL) GetCounter() uint64 {
 	return s.Counter
 }
 
-func NewConfig() (Config, error) {
+func NewConfig() (*config, error) {
 	cfg := new(config)
 	if err := env.Parse(cfg); err != nil {
 		return nil, err
@@ -70,14 +70,14 @@ func NewConfig() (Config, error) {
 	return cfg, nil
 }
 
-func NewHTTPConfig(scheme, address string) HTTP {
+func NewHTTPConfig(scheme, address string) *http {
 	return &http{
 		scheme,
 		address,
 	}
 }
 
-func NewShortURLConfig(u *url.URL, counter uint64) ShortURL {
+func NewShortURLConfig(u *url.URL, counter uint64) *shortURL {
 	return &shortURL{
 		u,
 		counter,

@@ -6,11 +6,10 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/sreway/shorturl/internal/config"
-
 	"github.com/go-chi/chi/v5"
 	"golang.org/x/exp/slog"
 
+	"github.com/sreway/shorturl/internal/config"
 	"github.com/sreway/shorturl/internal/usecases"
 )
 

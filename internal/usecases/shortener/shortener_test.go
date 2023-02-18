@@ -6,11 +6,10 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/sreway/shorturl/internal/config"
-
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sreway/shorturl/internal/config"
 	repoMock "github.com/sreway/shorturl/internal/usecases/adapters/storage/mocks"
 )
 

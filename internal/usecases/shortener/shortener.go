@@ -6,10 +6,9 @@ import (
 	"os"
 	"sync/atomic"
 
-	"github.com/sreway/shorturl/internal/config"
-
 	"golang.org/x/exp/slog"
 
+	"github.com/sreway/shorturl/internal/config"
 	entity "github.com/sreway/shorturl/internal/domain/url"
 	"github.com/sreway/shorturl/internal/usecases/adapters/storage"
 )

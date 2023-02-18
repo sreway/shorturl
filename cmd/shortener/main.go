@@ -35,11 +35,6 @@ func main() {
 	wg.Add(1)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	defer func() {
-		cancel()
-		wg.Wait()
-		os.Exit(code)
-	}()
 
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
@@ -73,4 +68,7 @@ func main() {
 	}()
 
 	code = <-exit
+	cancel()
+	wg.Wait()
+	os.Exit(code)
 }

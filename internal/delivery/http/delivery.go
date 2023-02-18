@@ -15,17 +15,17 @@ import (
 )
 
 type (
-	Delivery struct {
+	delivery struct {
 		shortener usecases.Shortener
 		router    *chi.Mux
 		logger    *slog.Logger
 	}
 )
 
-func New(uc usecases.Shortener) *Delivery {
+func New(uc usecases.Shortener) *delivery {
 	log := slog.New(slog.NewJSONHandler(os.Stdout).
 		WithAttrs([]slog.Attr{slog.String("service", "http")}))
-	d := &Delivery{
+	d := &delivery{
 		shortener: uc,
 		logger:    log,
 	}
@@ -33,7 +33,7 @@ func New(uc usecases.Shortener) *Delivery {
 	return d
 }
 
-func (d *Delivery) Run(ctx context.Context, config config.HTTP) error {
+func (d *delivery) Run(ctx context.Context, config config.HTTP) error {
 	httpServer := &http.Server{
 		Addr:    config.GetAddress(),
 		Handler: d.router,

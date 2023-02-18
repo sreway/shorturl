@@ -10,19 +10,7 @@ import (
 
 var urlSlug = regexp.MustCompile(`[^\/][A-Za-z0-9]+$`)
 
-func (d *Delivery) ShortURL(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		d.GetURL(w, r)
-	case http.MethodPost:
-		d.AddURL(w, r)
-	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-}
-
-func (d *Delivery) AddURL(w http.ResponseWriter, r *http.Request) {
+func (d *delivery) addURL(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -52,7 +40,7 @@ func (d *Delivery) AddURL(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (d *Delivery) GetURL(w http.ResponseWriter, r *http.Request) {
+func (d *delivery) getURL(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 
 	if !urlSlug.Match([]byte(r.URL.Path)) {

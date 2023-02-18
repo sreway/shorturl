@@ -16,7 +16,7 @@ import (
 	"github.com/sreway/shorturl/internal/usecases/shortener"
 )
 
-func TestDelivery_AddURL(t *testing.T) {
+func TestDelivery_addURL(t *testing.T) {
 	type (
 		want struct {
 			code     int
@@ -104,7 +104,7 @@ func TestDelivery_AddURL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.args.method, "/", strings.NewReader(tt.args.body))
 			w := httptest.NewRecorder()
-			h := http.HandlerFunc(d.AddURL)
+			h := http.HandlerFunc(d.addURL)
 			h.ServeHTTP(w, request)
 			resp := w.Result()
 			defer resp.Body.Close()
@@ -120,7 +120,7 @@ func TestDelivery_AddURL(t *testing.T) {
 	}
 }
 
-func TestDelivery_GetURL(t *testing.T) {
+func TestDelivery_getURL(t *testing.T) {
 	type (
 		want struct {
 			code    int
@@ -210,7 +210,7 @@ func TestDelivery_GetURL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.args.method, tt.args.path, nil)
 			w := httptest.NewRecorder()
-			h := http.HandlerFunc(d.GetURL)
+			h := http.HandlerFunc(d.getURL)
 			h.ServeHTTP(w, request)
 			resp := w.Result()
 			defer resp.Body.Close()

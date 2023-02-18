@@ -1,10 +1,11 @@
 package http
 
 import (
-	"golang.org/x/exp/slog"
 	"io"
 	"net/http"
 	"regexp"
+
+	"golang.org/x/exp/slog"
 )
 
 var urlSlug = regexp.MustCompile(`[^\/][A-Za-z0-9]+$`)

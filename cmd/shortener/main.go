@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
-	"golang.org/x/exp/slog"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
+
+	"golang.org/x/exp/slog"
 
 	"github.com/sreway/shorturl/config"
 	"github.com/sreway/shorturl/internal/delivery/http"

@@ -3,11 +3,13 @@ package http
 import (
 	"context"
 	"errors"
-	"golang.org/x/exp/slog"
 	"net/http"
 	"os"
 
+	"golang.org/x/exp/slog"
+
 	"github.com/go-chi/chi/v5"
+
 	"github.com/sreway/shorturl/config"
 	"github.com/sreway/shorturl/internal/usecases"
 )

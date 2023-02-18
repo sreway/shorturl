@@ -2,10 +2,11 @@ package shortener
 
 import (
 	"context"
-	"golang.org/x/exp/slog"
 	"net/url"
 	"os"
 	"sync/atomic"
+
+	"golang.org/x/exp/slog"
 
 	"github.com/sreway/shorturl/config"
 

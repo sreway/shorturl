@@ -11,7 +11,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
-	entity "github.com/sreway/shorturl/internal/domain/url"
 	repoMock "github.com/sreway/shorturl/internal/usecases/adapters/storage/mocks"
 )
 
@@ -27,10 +26,16 @@ func TestUseCase_CreateURL(t *testing.T) {
 		counter uint64
 	}
 
+	type want struct {
+		id       uint64
+		longURL  *url.URL
+		shortURL *url.URL
+	}
+
 	tests := []struct {
 		name    string
 		args    args
-		want    *entity.URL
+		want    want
 		wantErr bool
 	}{
 		{
@@ -39,13 +44,13 @@ func TestUseCase_CreateURL(t *testing.T) {
 				rawURL:  "https://ya.ru",
 				counter: 1000000000,
 			},
-			want: &entity.URL{
-				ID: 1000000001,
-				LongURL: &url.URL{
+			want: want{
+				1000000001,
+				&url.URL{
 					Scheme: "https",
 					Host:   "ya.ru",
 				},
-				ShortURL: &url.URL{
+				&url.URL{
 					Scheme: baseURL.Scheme,
 					Host:   baseURL.Host,
 					Path:   "15FTGh",
@@ -59,7 +64,6 @@ func TestUseCase_CreateURL(t *testing.T) {
 				rawURL:  "invalid",
 				counter: 1000000000,
 			},
-			want:    new(entity.URL),
 			wantErr: true,
 		},
 	}
@@ -85,13 +89,13 @@ func TestUseCase_CreateURL(t *testing.T) {
 				return
 			}
 
-			assert.Equal(t, tt.want.ID, got.ID)
-			assert.Equal(t, tt.want.LongURL.Scheme, got.LongURL.Scheme)
-			assert.Equal(t, tt.want.LongURL.Host, got.LongURL.Host)
-			assert.Equal(t, tt.want.LongURL.Path, got.LongURL.Path)
-			assert.Equal(t, tt.want.ShortURL.Scheme, got.ShortURL.Scheme)
-			assert.Equal(t, tt.want.ShortURL.Host, got.ShortURL.Host)
-			assert.Equal(t, tt.want.ShortURL.Path, got.ShortURL.Path)
+			assert.Equal(t, tt.want.id, got.ID())
+			assert.Equal(t, tt.want.longURL.Scheme, got.LongURL().Scheme)
+			assert.Equal(t, tt.want.longURL.Host, got.LongURL().Host)
+			assert.Equal(t, tt.want.longURL.Path, got.LongURL().Path)
+			assert.Equal(t, tt.want.shortURL.Scheme, got.ShortURL().Scheme)
+			assert.Equal(t, tt.want.shortURL.Host, got.ShortURL().Host)
+			assert.Equal(t, tt.want.shortURL.Path, got.ShortURL().Path)
 		})
 	}
 }
@@ -115,12 +119,18 @@ func TestUseCase_GetURL(t *testing.T) {
 			counter  uint64
 			repoResp repoResp
 		}
+
+		want struct {
+			id       uint64
+			longURL  *url.URL
+			shortURL *url.URL
+		}
 	)
 
 	tests := []struct {
 		name    string
 		args    args
-		want    *entity.URL
+		want    want
 		wantErr bool
 	}{
 		{
@@ -136,13 +146,13 @@ func TestUseCase_GetURL(t *testing.T) {
 					nil,
 				},
 			},
-			want: &entity.URL{
-				ID: 1000000001,
-				LongURL: &url.URL{
+			want: want{
+				1000000001,
+				&url.URL{
 					Scheme: "https",
 					Host:   "ya.ru",
 				},
-				ShortURL: &url.URL{
+				&url.URL{
 					Scheme: baseURL.Scheme,
 					Host:   baseURL.Host,
 					Path:   "15FTGh",
@@ -156,7 +166,6 @@ func TestUseCase_GetURL(t *testing.T) {
 				urlID:   "invalid!",
 				counter: 1000000000,
 			},
-			want:    new(entity.URL),
 			wantErr: true,
 		},
 
@@ -171,7 +180,6 @@ func TestUseCase_GetURL(t *testing.T) {
 				},
 			},
 
-			want:    new(entity.URL),
 			wantErr: true,
 		},
 	}
@@ -199,13 +207,13 @@ func TestUseCase_GetURL(t *testing.T) {
 				return
 			}
 
-			assert.Equal(t, tt.want.ID, got.ID)
-			assert.Equal(t, tt.want.LongURL.Scheme, got.LongURL.Scheme)
-			assert.Equal(t, tt.want.LongURL.Host, got.LongURL.Host)
-			assert.Equal(t, tt.want.LongURL.Path, got.LongURL.Path)
-			assert.Equal(t, tt.want.ShortURL.Scheme, got.ShortURL.Scheme)
-			assert.Equal(t, tt.want.ShortURL.Host, got.ShortURL.Host)
-			assert.Equal(t, tt.want.ShortURL.Path, got.ShortURL.Path)
+			assert.Equal(t, tt.want.id, got.ID())
+			assert.Equal(t, tt.want.longURL.Scheme, got.LongURL().Scheme)
+			assert.Equal(t, tt.want.longURL.Host, got.LongURL().Host)
+			assert.Equal(t, tt.want.longURL.Path, got.LongURL().Path)
+			assert.Equal(t, tt.want.shortURL.Scheme, got.ShortURL().Scheme)
+			assert.Equal(t, tt.want.shortURL.Host, got.ShortURL().Host)
+			assert.Equal(t, tt.want.shortURL.Path, got.ShortURL().Path)
 		})
 	}
 }

@@ -36,10 +36,10 @@ func (m *MockShortener) EXPECT() *MockShortenerMockRecorder {
 }
 
 // CreateURL mocks base method.
-func (m *MockShortener) CreateURL(ctx context.Context, rawURL string) (*url.URL, error) {
+func (m *MockShortener) CreateURL(ctx context.Context, rawURL string) (url.URL, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateURL", ctx, rawURL)
-	ret0, _ := ret[0].(*url.URL)
+	ret0, _ := ret[0].(url.URL)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -51,10 +51,10 @@ func (mr *MockShortenerMockRecorder) CreateURL(ctx, rawURL interface{}) *gomock.
 }
 
 // GetURL mocks base method.
-func (m *MockShortener) GetURL(ctx context.Context, urlID string) (*url.URL, error) {
+func (m *MockShortener) GetURL(ctx context.Context, urlID string) (url.URL, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetURL", ctx, urlID)
-	ret0, _ := ret[0].(*url.URL)
+	ret0, _ := ret[0].(url.URL)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

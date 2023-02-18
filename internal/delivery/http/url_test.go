@@ -25,7 +25,7 @@ func TestDelivery_addURL(t *testing.T) {
 		}
 
 		ucResp struct {
-			url *entity.URL
+			url entity.URL
 			err error
 		}
 
@@ -47,13 +47,14 @@ func TestDelivery_addURL(t *testing.T) {
 				body:   `https://ya.ru`,
 				method: http.MethodPost,
 				ucResp: ucResp{
-					&entity.URL{
-						ShortURL: &url.URL{
+					entity.NewURL(
+						0,
+						&url.URL{
 							Scheme: "http",
 							Host:   "localhost:8080",
 							Path:   "15FTGh",
 						},
-					},
+						nil),
 					nil,
 				},
 			},
@@ -128,7 +129,7 @@ func TestDelivery_getURL(t *testing.T) {
 		}
 
 		ucResp struct {
-			url *entity.URL
+			url entity.URL
 			err error
 		}
 
@@ -150,12 +151,13 @@ func TestDelivery_getURL(t *testing.T) {
 				path:   `/15FTGh`,
 				method: http.MethodGet,
 				ucResp: ucResp{
-					&entity.URL{
-						LongURL: &url.URL{
+					entity.NewURL(
+						0,
+						nil,
+						&url.URL{
 							Scheme: "https",
 							Host:   "ya.ru",
-						},
-					},
+						}),
 					nil,
 				},
 			},

@@ -32,7 +32,7 @@ func (d *delivery) addURL(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	_, err = w.Write([]byte(u.ShortURL.String()))
+	_, err = w.Write([]byte(u.ShortURL().String()))
 	if err != nil {
 		d.logger.Error("write body", err, slog.String("handler", "AddURL"))
 		HandelErrURL(w, ErrWriteBody)
@@ -56,7 +56,7 @@ func (d *delivery) getURL(w http.ResponseWriter, r *http.Request) {
 		HandelErrURL(w, err)
 		return
 	}
-	w.Header().Set("Location", u.LongURL.String())
+	w.Header().Set("Location", u.LongURL().String())
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 

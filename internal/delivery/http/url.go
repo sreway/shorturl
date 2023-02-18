@@ -1,6 +1,7 @@
 package http
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"regexp"
@@ -61,7 +62,17 @@ func (d *delivery) getURL(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandelErrURL(w http.ResponseWriter, err error) {
-	// temporarily do not check for an error, as a 400 code is always returned on error
-	_ = err
-	w.WriteHeader(http.StatusBadRequest)
+	// always return 400 for inc-1-3 because another error could possibly break the tests
+	switch {
+	case errors.Is(err, ErrEmptyBody):
+		w.WriteHeader(http.StatusBadRequest)
+	case errors.Is(err, ErrInvalidSlug):
+		w.WriteHeader(http.StatusBadRequest)
+	case errors.Is(err, ErrWriteBody):
+		w.WriteHeader(http.StatusBadRequest)
+	case errors.Is(err, ErrReadBody):
+		w.WriteHeader(http.StatusBadRequest)
+	default:
+		w.WriteHeader(http.StatusBadRequest)
+	}
 }

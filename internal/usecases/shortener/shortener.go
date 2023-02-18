@@ -12,7 +12,6 @@ import (
 
 	entity "github.com/sreway/shorturl/internal/domain/url"
 	"github.com/sreway/shorturl/internal/usecases/adapters/storage"
-	"github.com/sreway/shorturl/pkg/tools/base62"
 )
 
 type UseCase struct {
@@ -36,7 +35,7 @@ func (uc *UseCase) CreateURL(ctx context.Context, rawURL string) (*entity.URL, e
 		Host:   uc.cfg.BaseURL.Host,
 	}
 
-	shortURL.Path = base62.UIntEncode(id)
+	shortURL.Path = uintEncode(id)
 
 	err = uc.storage.Add(ctx, id, longURL)
 	if err != nil {
@@ -54,7 +53,7 @@ func (uc *UseCase) CreateURL(ctx context.Context, rawURL string) (*entity.URL, e
 }
 
 func (uc *UseCase) GetURL(ctx context.Context, urlID string) (*entity.URL, error) {
-	id, err := base62.UIntDecode(urlID)
+	id, err := uintDecode(urlID)
 	if err != nil {
 		uc.logger.Error("decode short url", err)
 		return nil, ErrDecodeURL

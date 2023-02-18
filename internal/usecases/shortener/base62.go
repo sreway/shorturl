@@ -1,15 +1,15 @@
-package base62
+package shortener
 
 import (
 	"fmt"
 	"math/big"
 )
 
-func UIntEncode(number uint64) string {
+func uintEncode(number uint64) string {
 	return big.NewInt(int64(number)).Text(62)
 }
 
-func UIntDecode(s string) (uint64, error) {
+func uintDecode(s string) (uint64, error) {
 	n := new(big.Int)
 	_, ok := n.SetString(s, 62)
 	if !ok {

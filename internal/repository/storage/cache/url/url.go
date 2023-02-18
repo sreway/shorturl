@@ -6,12 +6,12 @@ import (
 	"sync"
 )
 
-type Repo struct {
+type repo struct {
 	data map[uint64]*url.URL
 	mu   sync.RWMutex
 }
 
-func (r *Repo) Add(ctx context.Context, id uint64, longURL *url.URL) error {
+func (r *repo) Add(ctx context.Context, id uint64, longURL *url.URL) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -21,7 +21,7 @@ func (r *Repo) Add(ctx context.Context, id uint64, longURL *url.URL) error {
 	return nil
 }
 
-func (r *Repo) Get(ctx context.Context, id uint64) (*url.URL, error) {
+func (r *repo) Get(ctx context.Context, id uint64) (*url.URL, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -35,8 +35,8 @@ func (r *Repo) Get(ctx context.Context, id uint64) (*url.URL, error) {
 	return v, nil
 }
 
-func New() *Repo {
-	return &Repo{
+func New() *repo {
+	return &repo{
 		data: map[uint64]*url.URL{},
 	}
 }

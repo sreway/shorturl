@@ -16,19 +16,19 @@ func (d *delivery) addURL(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(r.Body)
 	if err != nil {
 		d.logger.Error("read body", err, slog.String("handler", "AddURL"))
-		HandelErrURL(w, ErrReadBody)
+		handelErrURL(w, ErrReadBody)
 		return
 	}
 
 	if len(b) == 0 {
 		d.logger.Error("check len body", ErrEmptyBody, slog.String("handler", "AddURL"))
-		HandelErrURL(w, ErrReadBody)
+		handelErrURL(w, ErrReadBody)
 		return
 	}
 
 	u, err := d.shortener.CreateURL(r.Context(), string(b))
 	if err != nil {
-		HandelErrURL(w, err)
+		handelErrURL(w, err)
 		return
 	}
 
@@ -36,7 +36,7 @@ func (d *delivery) addURL(w http.ResponseWriter, r *http.Request) {
 	_, err = w.Write([]byte(u.ShortURL().String()))
 	if err != nil {
 		d.logger.Error("write body", err, slog.String("handler", "AddURL"))
-		HandelErrURL(w, ErrWriteBody)
+		handelErrURL(w, ErrWriteBody)
 		return
 	}
 }
@@ -46,7 +46,7 @@ func (d *delivery) getURL(w http.ResponseWriter, r *http.Request) {
 
 	if !urlSlug.Match([]byte(r.URL.Path)) {
 		d.logger.Error("invalid slug", ErrInvalidSlug, slog.String("handler", "GetURL"))
-		HandelErrURL(w, ErrInvalidSlug)
+		handelErrURL(w, ErrInvalidSlug)
 		return
 	}
 
@@ -54,14 +54,14 @@ func (d *delivery) getURL(w http.ResponseWriter, r *http.Request) {
 
 	u, err := d.shortener.GetURL(r.Context(), string(id))
 	if err != nil {
-		HandelErrURL(w, err)
+		handelErrURL(w, err)
 		return
 	}
 	w.Header().Set("Location", u.LongURL().String())
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-func HandelErrURL(w http.ResponseWriter, err error) {
+func handelErrURL(w http.ResponseWriter, err error) {
 	// always return 400 for inc-1-3 because another error could possibly break the tests
 	switch {
 	case errors.Is(err, ErrEmptyBody):

@@ -112,7 +112,7 @@ func TestDelivery_addURL(t *testing.T) {
 			assert.Equal(t, tt.want.code, resp.StatusCode)
 			resBody, err := io.ReadAll(resp.Body)
 			assert.NoError(t, err)
-			assert.Equal(t, string(resBody), tt.want.response)
+			assert.Equal(t, tt.want.response, string(resBody))
 
 			for k, v := range tt.want.headers {
 				assert.Equal(t, resp.Header.Get(k), v)
@@ -217,6 +217,106 @@ func TestDelivery_getURL(t *testing.T) {
 			resp := w.Result()
 			defer resp.Body.Close()
 			assert.Equal(t, tt.want.code, resp.StatusCode)
+			for k, v := range tt.want.headers {
+				assert.Equal(t, resp.Header.Get(k), v)
+			}
+		})
+	}
+}
+
+func Test_delivery_shortURL(t *testing.T) {
+	type (
+		ucResp struct {
+			url entity.URL
+			err error
+		}
+
+		want struct {
+			code     int
+			response string
+			headers  map[string]string
+		}
+
+		args struct {
+			body   string
+			method string
+			path   string
+			ucResp ucResp
+		}
+	)
+
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "positive short url",
+			args: args{
+				path:   "/api/shorten",
+				body:   `{"url": "https://ya.ru"}`,
+				method: http.MethodPost,
+				ucResp: ucResp{
+					entity.NewURL(
+						0,
+						&url.URL{
+							Scheme: "http",
+							Host:   "localhost:8080",
+							Path:   "15FTGh",
+						},
+						nil),
+					nil,
+				},
+			},
+
+			want: want{
+				code:     http.StatusCreated,
+				response: `{"result":"http://localhost:8080/15FTGh"}`,
+				headers: map[string]string{
+					"Content-Type": "application/json",
+				},
+			},
+		},
+
+		{
+			name: "negative short url",
+			args: args{
+				path:   "/api/shorten",
+				body:   `{"invalid": "invalid"}`,
+				method: http.MethodPost,
+				ucResp: ucResp{nil, nil},
+			},
+
+			want: want{
+				code:     http.StatusBadRequest,
+				response: "",
+				headers: map[string]string{
+					"Content-Type": "application/json",
+				},
+			},
+		},
+	}
+
+	anyMock := gomock.Any()
+	for _, tt := range tests {
+		ctl := gomock.NewController(t)
+		defer ctl.Finish()
+		uc := ucMock.NewMockShortener(ctl)
+		d := New(uc)
+
+		uc.EXPECT().CreateURL(anyMock, anyMock).Return(tt.args.ucResp.url, tt.args.ucResp.err).AnyTimes()
+
+		t.Run(tt.name, func(t *testing.T) {
+			request := httptest.NewRequest(tt.args.method, tt.args.path, strings.NewReader(tt.args.body))
+			w := httptest.NewRecorder()
+			h := http.HandlerFunc(d.shortURL)
+			h.ServeHTTP(w, request)
+			resp := w.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, tt.want.code, resp.StatusCode)
+			resBody, err := io.ReadAll(resp.Body)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want.response, string(resBody))
 			for k, v := range tt.want.headers {
 				assert.Equal(t, resp.Header.Get(k), v)
 			}

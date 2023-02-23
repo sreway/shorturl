@@ -7,4 +7,5 @@ var (
 	ErrEmptyBody   = errors.New("empty body")
 	ErrWriteBody   = errors.New("write body error")
 	ErrInvalidSlug = errors.New("invalid slug")
+	ErrDecodeBody  = errors.New("failed decode body")
 )

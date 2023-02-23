@@ -2,6 +2,10 @@ name: go vet test
 
 on:
   pull_request:
+  push:
+    branches:
+      - main
+      - 'iter*'
 
 jobs:
 

@@ -9,6 +9,12 @@ func (d *delivery) initRouter() *chi.Mux {
 }
 
 func (d *delivery) routerURL(r chi.Router) {
-	r.Post("/", d.addURL)
-	r.Get("/{id}", d.getURL)
+	r.Route("/", func(r chi.Router) {
+		r.Post("/", d.addURL)
+		r.Get("/{id}", d.getURL)
+	})
+
+	r.Route("/api", func(r chi.Router) {
+		r.Post("/shorten", d.shortURL)
+	})
 }

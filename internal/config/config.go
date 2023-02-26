@@ -10,6 +10,7 @@ type (
 	Config interface {
 		HTTP() *http
 		ShortURL() *shortURL
+		Storage() *storage
 	}
 
 	HTTP interface {
@@ -22,9 +23,14 @@ type (
 		GetCounter() uint64
 	}
 
+	Cache interface {
+		GetFilePath() string
+	}
+
 	config struct {
 		http     *http
 		shortURL *shortURL
+		storage  *storage
 	}
 
 	http struct {
@@ -36,6 +42,14 @@ type (
 		BaseURL *url.URL `env:"BASE_URL" envDefault:"http://127.0.0.1:8080"`
 		Counter uint64   `env:"COUNTER" envDefault:"1000000000"`
 	}
+
+	storage struct {
+		cache *cache
+	}
+
+	cache struct {
+		FilePath string `env:"FILE_STORAGE_PATH" envDefault:"./storage.json"`
+	}
 )
 
 func (c *config) HTTP() *http {
@@ -44,6 +58,10 @@ func (c *config) HTTP() *http {
 
 func (c *config) ShortURL() *shortURL {
 	return c.shortURL
+}
+
+func (c *config) Storage() *storage {
+	return c.storage
 }
 
 func (h *http) GetScheme() string {
@@ -62,21 +80,33 @@ func (s *shortURL) GetCounter() uint64 {
 	return s.Counter
 }
 
+func (store *storage) Cache() *cache {
+	return store.cache
+}
+
+func (c *cache) GetFilePath() string {
+	return c.FilePath
+}
+
 func NewConfig() (*config, error) {
-	cfgHTTP := new(http)
-	cfgShortURL := new(shortURL)
 	cfg := new(config)
+	cfg.shortURL = new(shortURL)
+	cfg.http = new(http)
+	cfg.storage = new(storage)
+	cfg.storage.cache = new(cache)
 
-	if err := env.Parse(cfgHTTP); err != nil {
+	if err := env.Parse(cfg.http); err != nil {
 		return nil, err
 	}
 
-	if err := env.Parse(cfgShortURL); err != nil {
+	if err := env.Parse(cfg.shortURL); err != nil {
 		return nil, err
 	}
 
-	cfg.http = cfgHTTP
-	cfg.shortURL = cfgShortURL
+	if err := env.Parse(cfg.storage.cache); err != nil {
+		return nil, err
+	}
+
 	return cfg, nil
 }
 

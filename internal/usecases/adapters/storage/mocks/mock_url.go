@@ -36,17 +36,32 @@ func (m *MockURL) EXPECT() *MockURLMockRecorder {
 }
 
 // Add mocks base method.
-func (m *MockURL) Add(ctx context.Context, id uint64, longURL *url.URL) error {
+func (m *MockURL) Add(ctx context.Context, longURL *url.URL) (uint64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Add", ctx, id, longURL)
+	ret := m.ctrl.Call(m, "Add", ctx, longURL)
+	ret0, _ := ret[0].(uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Add indicates an expected call of Add.
+func (mr *MockURLMockRecorder) Add(ctx, longURL interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockURL)(nil).Add), ctx, longURL)
+}
+
+// Close mocks base method.
+func (m *MockURL) Close() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Close")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Add indicates an expected call of Add.
-func (mr *MockURLMockRecorder) Add(ctx, id, longURL interface{}) *gomock.Call {
+// Close indicates an expected call of Close.
+func (mr *MockURLMockRecorder) Close() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockURL)(nil).Add), ctx, id, longURL)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockURL)(nil).Close))
 }
 
 // Get mocks base method.

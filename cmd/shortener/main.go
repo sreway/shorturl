@@ -6,12 +6,13 @@ import (
 	"os/signal"
 	"sync"
 
-	"golang.org/x/exp/slog"
-
 	"github.com/sreway/shorturl/internal/config"
 	"github.com/sreway/shorturl/internal/delivery/http"
 	repo "github.com/sreway/shorturl/internal/repository/storage/cache/url"
+	"github.com/sreway/shorturl/internal/usecases/adapters/storage"
 	"github.com/sreway/shorturl/internal/usecases/shortener"
+
+	"golang.org/x/exp/slog"
 )
 
 func main() {
@@ -33,8 +34,17 @@ func main() {
 	exit := make(chan int)
 
 	go func() {
-		defer wg.Done()
-		var cfg config.Config
+		defer func() {
+			wg.Done()
+		}()
+
+		var (
+			cfg            config.Config
+			configCache    config.Cache
+			configShortURL config.ShortURL
+			repoURL        storage.URL
+		)
+
 		cfg, err := config.NewConfig()
 		if err != nil {
 			log.Error("failed initialize config", err)
@@ -42,7 +52,21 @@ func main() {
 			exit <- 1
 			return
 		}
-		repoURL := repo.New()
+
+		configCache = cfg.Storage().Cache()
+		configShortURL = cfg.ShortURL()
+
+		repoURL = repo.New(
+			repo.Counter(configShortURL.GetCounter()),
+			repo.File(configCache.GetFilePath()),
+		)
+		defer func() {
+			err = repoURL.Close()
+			if err != nil {
+				log.Error("failed close url repository", err)
+			}
+		}()
+
 		service := shortener.New(repoURL, cfg.ShortURL())
 		srv := http.New(service)
 

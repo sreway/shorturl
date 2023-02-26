@@ -3,7 +3,7 @@ package config
 import (
 	"net/url"
 
-	"github.com/caarlos0/env/v6"
+	"github.com/caarlos0/env/v7"
 )
 
 type (
@@ -106,7 +106,6 @@ func NewConfig() (*config, error) {
 	if err := env.Parse(cfg.storage.cache); err != nil {
 		return nil, err
 	}
-
 	return cfg, nil
 }
 

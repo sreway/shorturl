@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"os"
 	"os/signal"
 	"sync"
@@ -14,6 +15,35 @@ import (
 
 	"golang.org/x/exp/slog"
 )
+
+func init() {
+	var (
+		httpServerAddress string
+		shortenBaseURL    string
+		storageCachePath  string
+	)
+
+	flag.StringVar(&httpServerAddress, "a", httpServerAddress,
+		"http server address: scheme:host:port")
+	flag.StringVar(&shortenBaseURL, "b", shortenBaseURL, "shorten base url")
+	flag.StringVar(&storageCachePath, "f", storageCachePath, "storage cache file path")
+	flag.Parse()
+
+	_, exist := os.LookupEnv("BASE_URL")
+	if !exist {
+		_ = os.Setenv("BASE_URL", shortenBaseURL)
+	}
+
+	_, exist = os.LookupEnv("SERVER_ADDRESS")
+	if !exist {
+		_ = os.Setenv("SERVER_ADDRESS", httpServerAddress)
+	}
+
+	_, exist = os.LookupEnv("FILE_STORAGE_PATH")
+	if !exist {
+		_ = os.Setenv("FILE_STORAGE_PATH", storageCachePath)
+	}
+}
 
 func main() {
 	var code int

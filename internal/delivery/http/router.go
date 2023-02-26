@@ -8,7 +8,7 @@ import (
 
 func (d *delivery) initRouter(http config.HTTP) *chi.Mux {
 	router := chi.NewRouter()
-	d.useCompress(http, router)
+	d.useMiddleware(http, router)
 	d.routerURL(router)
 	return router
 }

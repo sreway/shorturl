@@ -16,6 +16,8 @@ type (
 	HTTP interface {
 		GetScheme() string
 		GetAddress() string
+		GetCompressTypes() []string
+		GetCompressLevel() int
 	}
 
 	ShortURL interface {
@@ -34,8 +36,10 @@ type (
 	}
 
 	http struct {
-		Scheme  string `env:"SERVER_SCHEME" envDefault:"http"`
-		Address string `env:"SERVER_ADDRESS" envDefault:"127.0.0.1:8080"`
+		Scheme        string   `env:"SERVER_SCHEME" envDefault:"http"`
+		Address       string   `env:"SERVER_ADDRESS" envDefault:"127.0.0.1:8080"`
+		CompressTypes []string `env:"HTTP_COMPRESS_TYPES" envDefault:"text/plain,application/json" envSeparator:","`
+		CompressLevel int      `env:"HTTP_COMPRESS_LEVEL" envDefault:"5"`
 	}
 
 	shortURL struct {
@@ -70,6 +74,14 @@ func (h *http) GetScheme() string {
 
 func (h *http) GetAddress() string {
 	return h.Address
+}
+
+func (h *http) GetCompressTypes() []string {
+	return h.CompressTypes
+}
+
+func (h *http) GetCompressLevel() int {
+	return h.CompressLevel
 }
 
 func (s *shortURL) GetBaseURL() *url.URL {
@@ -107,13 +119,6 @@ func NewConfig() (*config, error) {
 		return nil, err
 	}
 	return cfg, nil
-}
-
-func NewHTTPConfig(scheme, address string) *http {
-	return &http{
-		scheme,
-		address,
-	}
 }
 
 func NewShortURLConfig(u *url.URL, counter uint64) *shortURL {

@@ -1,9 +1,14 @@
 package http
 
-import "github.com/go-chi/chi/v5"
+import (
+	"github.com/go-chi/chi/v5"
 
-func (d *delivery) initRouter() *chi.Mux {
+	"github.com/sreway/shorturl/internal/config"
+)
+
+func (d *delivery) initRouter(http config.HTTP) *chi.Mux {
 	router := chi.NewRouter()
+	d.useCompress(http, router)
 	d.routerURL(router)
 	return router
 }

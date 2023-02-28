@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"regexp"
 
+	"golang.org/x/exp/slog"
+
 	shortURL "github.com/sreway/shorturl/internal/delivery/http/url"
 	"github.com/sreway/shorturl/internal/usecases/shortener"
-
-	"golang.org/x/exp/slog"
 )
 
 var urlSlug = regexp.MustCompile(`[^\/][A-Za-z0-9]+$`)

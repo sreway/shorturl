@@ -5,11 +5,11 @@ import (
 	"net/url"
 	"os"
 
+	"golang.org/x/exp/slog"
+
 	"github.com/sreway/shorturl/internal/config"
 	entity "github.com/sreway/shorturl/internal/domain/url"
 	"github.com/sreway/shorturl/internal/usecases/adapters/storage"
-
-	"golang.org/x/exp/slog"
 )
 
 type useCase struct {

@@ -7,13 +7,13 @@ import (
 	"os/signal"
 	"sync"
 
+	"golang.org/x/exp/slog"
+
 	"github.com/sreway/shorturl/internal/config"
 	"github.com/sreway/shorturl/internal/delivery/http"
 	repo "github.com/sreway/shorturl/internal/repository/storage/cache/url"
 	"github.com/sreway/shorturl/internal/usecases/adapters/storage"
 	"github.com/sreway/shorturl/internal/usecases/shortener"
-
-	"golang.org/x/exp/slog"
 )
 
 func init() {

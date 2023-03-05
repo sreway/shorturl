@@ -11,7 +11,7 @@ import (
 
 	"github.com/sreway/shorturl/internal/config"
 	"github.com/sreway/shorturl/internal/delivery/http"
-	repo "github.com/sreway/shorturl/internal/repository/storage/cache/url"
+	"github.com/sreway/shorturl/internal/repository/storage/cache"
 	"github.com/sreway/shorturl/internal/usecases/adapters/storage"
 	"github.com/sreway/shorturl/internal/usecases/shortener"
 )
@@ -72,7 +72,7 @@ func main() {
 			cfg            config.Config
 			configCache    config.Cache
 			configShortURL config.ShortURL
-			repoURL        storage.URL
+			repo           storage.URL
 		)
 
 		cfg, err := config.NewConfig()
@@ -86,18 +86,18 @@ func main() {
 		configCache = cfg.Storage().Cache()
 		configShortURL = cfg.ShortURL()
 
-		repoURL = repo.New(
-			repo.Counter(configShortURL.GetCounter()),
-			repo.File(configCache.GetFilePath()),
+		repo = cache.New(
+			cache.Counter(configShortURL.GetCounter()),
+			cache.File(configCache.GetFilePath()),
 		)
 		defer func() {
-			err = repoURL.Close()
+			err = repo.Close()
 			if err != nil {
 				log.Error("failed close url repository", err)
 			}
 		}()
 
-		service := shortener.New(repoURL, cfg.ShortURL())
+		service := shortener.New(repo, cfg.ShortURL())
 		srv := http.New(service)
 
 		err = srv.Run(ctx, cfg.HTTP())

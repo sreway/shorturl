@@ -28,16 +28,15 @@ func New(uc usecases.Shortener) *delivery {
 		shortener: uc,
 		logger:    log,
 	}
-	d.router = d.initRouter()
 	return d
 }
 
 func (d *delivery) Run(ctx context.Context, config config.HTTP) error {
+	d.router = d.initRouter(config)
 	httpServer := &http.Server{
 		Addr:    config.GetAddress(),
 		Handler: d.router,
 	}
-
 	ctxServer, stopServer := context.WithCancel(context.Background())
 	go func() {
 		<-ctx.Done()

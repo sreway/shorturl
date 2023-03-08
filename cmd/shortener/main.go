@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"os"
 	"os/signal"
 	"sync"
@@ -10,9 +11,39 @@ import (
 
 	"github.com/sreway/shorturl/internal/config"
 	"github.com/sreway/shorturl/internal/delivery/http"
-	repo "github.com/sreway/shorturl/internal/repository/storage/cache/url"
+	"github.com/sreway/shorturl/internal/repository/storage/cache"
+	"github.com/sreway/shorturl/internal/usecases/adapters/storage"
 	"github.com/sreway/shorturl/internal/usecases/shortener"
 )
+
+func init() {
+	var (
+		httpServerAddress string
+		shortenBaseURL    string
+		storageCachePath  string
+	)
+
+	flag.StringVar(&httpServerAddress, "a", httpServerAddress,
+		"http server address: scheme:host:port")
+	flag.StringVar(&shortenBaseURL, "b", shortenBaseURL, "shorten base url")
+	flag.StringVar(&storageCachePath, "f", storageCachePath, "storage cache file path")
+	flag.Parse()
+
+	_, exist := os.LookupEnv("BASE_URL")
+	if !exist {
+		_ = os.Setenv("BASE_URL", shortenBaseURL)
+	}
+
+	_, exist = os.LookupEnv("SERVER_ADDRESS")
+	if !exist {
+		_ = os.Setenv("SERVER_ADDRESS", httpServerAddress)
+	}
+
+	_, exist = os.LookupEnv("FILE_STORAGE_PATH")
+	if !exist {
+		_ = os.Setenv("FILE_STORAGE_PATH", storageCachePath)
+	}
+}
 
 func main() {
 	var code int
@@ -33,8 +64,17 @@ func main() {
 	exit := make(chan int)
 
 	go func() {
-		defer wg.Done()
-		var cfg config.Config
+		defer func() {
+			wg.Done()
+		}()
+
+		var (
+			cfg            config.Config
+			configCache    config.Cache
+			configShortURL config.ShortURL
+			repo           storage.URL
+		)
+
 		cfg, err := config.NewConfig()
 		if err != nil {
 			log.Error("failed initialize config", err)
@@ -42,8 +82,22 @@ func main() {
 			exit <- 1
 			return
 		}
-		repoURL := repo.New()
-		service := shortener.New(repoURL, cfg.ShortURL())
+
+		configCache = cfg.Storage().Cache()
+		configShortURL = cfg.ShortURL()
+
+		repo = cache.New(
+			cache.Counter(configShortURL.GetCounter()),
+			cache.File(configCache.GetFilePath()),
+		)
+		defer func() {
+			err = repo.Close()
+			if err != nil {
+				log.Error("failed close url repository", err)
+			}
+		}()
+
+		service := shortener.New(repo, cfg.ShortURL())
 		srv := http.New(service)
 
 		err = srv.Run(ctx, cfg.HTTP())

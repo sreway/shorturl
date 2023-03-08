@@ -75,7 +75,7 @@ func Test_useCase_CreateURL(t *testing.T) {
 	for _, tt := range tests {
 		cfg := config.NewShortURLConfig(baseURL, tt.args.counter)
 		uc := New(repo, cfg)
-		repo.EXPECT().Add(anyMock, anyMock, anyMock).Return(nil).AnyTimes()
+		repo.EXPECT().Add(anyMock, anyMock).Return(tt.args.counter+1, nil).AnyTimes()
 
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := uc.CreateURL(ctx, tt.args.rawURL)

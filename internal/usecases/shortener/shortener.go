@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/url"
 	"os"
-	"sync/atomic"
 
 	"golang.org/x/exp/slog"
 
@@ -27,22 +26,20 @@ func (uc *useCase) CreateURL(ctx context.Context, rawURL string) (entity.URL, er
 		return nil, ErrParseURL
 	}
 
-	id := atomic.AddUint64(&uc.counter, 1)
-
 	shortURL := &url.URL{
 		Scheme: uc.baseURL.Scheme,
 		Host:   uc.baseURL.Host,
 	}
 
-	shortURL.Path = uintEncode(id)
-
-	err = uc.storage.Add(ctx, id, longURL)
+	id, err := uc.storage.Add(ctx, longURL)
 	if err != nil {
 		uc.logger.Error("store url", err, slog.Uint64("id", id),
 			slog.String("longURL", longURL.String()),
 		)
 		return nil, err
 	}
+
+	shortURL.Path = uintEncode(id)
 
 	return entity.NewURL(id, shortURL, longURL), nil
 }

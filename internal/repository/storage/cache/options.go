@@ -1,18 +1,6 @@
 package cache
 
-import "fmt"
-
 type Option func(*repo) error
-
-func Counter(counter uint64) Option {
-	return func(r *repo) error {
-		if r.counter != 0 {
-			r.logger.Warn(fmt.Sprintf("counter value is overwritten by the value %d", counter))
-		}
-		r.counter = counter
-		return nil
-	}
-}
 
 func File(path string) Option {
 	return func(r *repo) error {

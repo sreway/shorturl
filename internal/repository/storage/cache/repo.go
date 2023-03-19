@@ -5,42 +5,59 @@ import (
 	"net/url"
 	"os"
 	"sync"
-	"sync/atomic"
 
+	"github.com/google/uuid"
 	"golang.org/x/exp/slog"
 )
 
 type repo struct {
-	data    map[uint64]*url.URL
-	counter uint64
+	data    map[uuid.UUID]*item
 	file    *os.File
 	fileUse bool
 	logger  *slog.Logger
 	mu      sync.RWMutex
 }
 
-func (r *repo) Add(ctx context.Context, longURL *url.URL) (uint64, error) {
+func (r *repo) Add(ctx context.Context, id, userID [16]byte, value *url.URL) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	_ = ctx
-	id := atomic.AddUint64(&r.counter, 1)
-	r.data[id] = longURL
-	return id, nil
+
+	r.data[id] = &item{
+		UserID: userID,
+		Value:  value,
+	}
+	return nil
 }
 
-func (r *repo) Get(ctx context.Context, id uint64) (*url.URL, error) {
+func (r *repo) Get(ctx context.Context, id [16]byte) (value url.URL, userID [16]byte, err error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	_ = ctx
 
-	v, ok := r.data[id]
+	i, ok := r.data[id]
 	if !ok {
-		return nil, ErrNotFound
+		return url.URL{}, [16]byte{}, ErrNotFound
 	}
 
-	return v, nil
+	return *i.Value, i.UserID, nil
+}
+
+func (r *repo) GetByUserID(ctx context.Context, userID [16]byte) (map[[16]byte]url.URL, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	_ = ctx
+	result := map[[16]byte]url.URL{}
+
+	for k, v := range r.data {
+		if v.UserID == userID {
+			result[k] = *v.Value
+		}
+	}
+
+	return result, nil
 }
 
 func (r *repo) Close() error {
@@ -62,7 +79,7 @@ func New(opts ...Option) *repo {
 		WithAttrs([]slog.Attr{slog.String("repository", "cache")}))
 
 	r := &repo{
-		data:   map[uint64]*url.URL{},
+		data:   map[uuid.UUID]*item{},
 		logger: log,
 	}
 

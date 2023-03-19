@@ -2,13 +2,13 @@ package cache
 
 import (
 	"encoding/json"
-	"net/url"
 	"os"
+
+	"github.com/google/uuid"
 )
 
 type fs struct {
-	Data    map[uint64]*url.URL `json:"data"`
-	Counter uint64              `json:"counter"`
+	Data map[uuid.UUID]*item `json:"data"`
 }
 
 func (r *repo) fileOpen(path string) error {
@@ -42,7 +42,6 @@ func (r *repo) fileLoad() error {
 	}
 
 	r.data = store.Data
-	r.counter = store.Counter
 	r.logger.Info("success load url data from file")
 
 	return nil
@@ -64,7 +63,6 @@ func (r *repo) fileStore() error {
 
 	store := new(fs)
 	store.Data = r.data
-	store.Counter = r.counter
 
 	if err = json.NewEncoder(r.file).Encode(store); err != nil {
 		return err

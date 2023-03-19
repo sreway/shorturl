@@ -36,18 +36,17 @@ func (m *MockURL) EXPECT() *MockURLMockRecorder {
 }
 
 // Add mocks base method.
-func (m *MockURL) Add(ctx context.Context, longURL *url.URL) (uint64, error) {
+func (m *MockURL) Add(ctx context.Context, id, userID [16]byte, value *url.URL) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Add", ctx, longURL)
-	ret0, _ := ret[0].(uint64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "Add", ctx, id, userID, value)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // Add indicates an expected call of Add.
-func (mr *MockURLMockRecorder) Add(ctx, longURL interface{}) *gomock.Call {
+func (mr *MockURLMockRecorder) Add(ctx, id, userID, value interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockURL)(nil).Add), ctx, longURL)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockURL)(nil).Add), ctx, id, userID, value)
 }
 
 // Close mocks base method.
@@ -65,16 +64,32 @@ func (mr *MockURLMockRecorder) Close() *gomock.Call {
 }
 
 // Get mocks base method.
-func (m *MockURL) Get(ctx context.Context, id uint64) (*url.URL, error) {
+func (m *MockURL) Get(ctx context.Context, id [16]byte) (url.URL, [16]byte, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", ctx, id)
-	ret0, _ := ret[0].(*url.URL)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(url.URL)
+	ret1, _ := ret[1].([16]byte)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // Get indicates an expected call of Get.
 func (mr *MockURLMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockURL)(nil).Get), ctx, id)
+}
+
+// GetByUserID mocks base method.
+func (m *MockURL) GetByUserID(ctx context.Context, userID [16]byte) (map[[16]byte]url.URL, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByUserID", ctx, userID)
+	ret0, _ := ret[0].(map[[16]byte]url.URL)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByUserID indicates an expected call of GetByUserID.
+func (mr *MockURLMockRecorder) GetByUserID(ctx, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByUserID", reflect.TypeOf((*MockURL)(nil).GetByUserID), ctx, userID)
 }

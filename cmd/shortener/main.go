@@ -85,9 +85,7 @@ func main() {
 
 		configCache = cfg.Storage().Cache()
 		configShortURL = cfg.ShortURL()
-
 		repo = cache.New(
-			cache.Counter(configShortURL.GetCounter()),
 			cache.File(configCache.GetFilePath()),
 		)
 		defer func() {
@@ -97,7 +95,7 @@ func main() {
 			}
 		}()
 
-		service := shortener.New(repo, cfg.ShortURL())
+		service := shortener.New(repo, configShortURL)
 		srv := http.New(service)
 
 		err = srv.Run(ctx, cfg.HTTP())

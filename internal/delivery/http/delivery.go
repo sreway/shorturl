@@ -16,6 +16,7 @@ import (
 type (
 	delivery struct {
 		shortener usecases.Shortener
+		cfg       config.HTTP
 		router    *chi.Mux
 		logger    *slog.Logger
 	}
@@ -37,6 +38,9 @@ func (d *delivery) Run(ctx context.Context, config config.HTTP) error {
 		Addr:    config.GetAddress(),
 		Handler: d.router,
 	}
+
+	d.cfg = config
+
 	ctxServer, stopServer := context.WithCancel(context.Background())
 	go func() {
 		<-ctx.Done()

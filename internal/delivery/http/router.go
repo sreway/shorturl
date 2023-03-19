@@ -21,5 +21,8 @@ func (d *delivery) routerURL(r chi.Router) {
 
 	r.Route("/api", func(r chi.Router) {
 		r.Post("/shorten", d.shortURL)
+		r.Route("/user", func(r chi.Router) {
+			r.Get("/urls", d.getUserURLs)
+		})
 	})
 }

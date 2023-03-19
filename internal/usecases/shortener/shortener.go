@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/google/uuid"
 	"golang.org/x/exp/slog"
 
 	"github.com/sreway/shorturl/internal/config"
@@ -14,12 +15,11 @@ import (
 
 type useCase struct {
 	baseURL *url.URL
-	counter uint64
 	storage storage.URL
 	logger  *slog.Logger
 }
 
-func (uc *useCase) CreateURL(ctx context.Context, rawURL string) (entity.URL, error) {
+func (uc *useCase) CreateURL(ctx context.Context, rawURL string, userID string) (entity.URL, error) {
 	longURL, err := url.ParseRequestURI(rawURL)
 	if err != nil {
 		uc.logger.Error("parse long url", err, slog.String("longURL", rawURL))
@@ -31,48 +31,85 @@ func (uc *useCase) CreateURL(ctx context.Context, rawURL string) (entity.URL, er
 		Host:   uc.baseURL.Host,
 	}
 
-	id, err := uc.storage.Add(ctx, longURL)
+	parsedUserID, err := uuid.ParseBytes([]byte(userID))
 	if err != nil {
-		uc.logger.Error("store url", err, slog.Uint64("id", id),
+		uc.logger.Error("failed parse RFC 4122 uuid from user id", err, slog.String("userID", userID))
+		return nil, err
+	}
+
+	id := uuid.New()
+
+	shortURL.Path = encodeUUID(id)
+
+	err = uc.storage.Add(ctx, id, parsedUserID, longURL)
+	if err != nil {
+		uc.logger.Error("store url", err, slog.String("id", id.String()),
 			slog.String("longURL", longURL.String()),
 		)
 		return nil, err
 	}
 
-	shortURL.Path = uintEncode(id)
+	u := entity.NewURL(id, parsedUserID, shortURL, longURL)
 
-	return entity.NewURL(id, shortURL, longURL), nil
+	return u, nil
 }
 
 func (uc *useCase) GetURL(ctx context.Context, urlID string) (entity.URL, error) {
-	id, err := uintDecode(urlID)
+	decoded, err := decodeUUID(urlID)
 	if err != nil {
 		uc.logger.Error("decode short url", err)
 		return nil, ErrDecodeURL
 	}
 
+	id, err := uuid.FromBytes(decoded)
+	if err != nil {
+		uc.logger.Error("failed create uuid from url id", err, slog.String("urlID", urlID))
+	}
+
+	longURL, userID, err := uc.storage.Get(ctx, id)
+	if err != nil {
+		uc.logger.Error("failed get url", err, slog.String("urlID", urlID))
+	}
 	shortURL := &url.URL{
 		Scheme: uc.baseURL.Scheme,
 		Host:   uc.baseURL.Host,
 	}
 
-	shortURL.Path = urlID
+	shortURL.Path = encodeUUID(id)
 
-	longURL, err := uc.storage.Get(ctx, id)
+	return entity.NewURL(id, userID, shortURL, &longURL), nil
+}
+
+func (uc *useCase) GetUserURLs(ctx context.Context, userID string) ([]entity.URL, error) {
+	parsedUserID, err := uuid.ParseBytes([]byte(userID))
 	if err != nil {
-		uc.logger.Error("get storage url", err, slog.Uint64("id", id),
-			slog.String("shortURL", shortURL.String()),
-		)
+		uc.logger.Error("failed parse RFC 4122 uuid from user id", err, slog.String("userID", userID))
 		return nil, err
 	}
-	return entity.NewURL(id, shortURL, longURL), nil
+
+	storageURLs, err := uc.storage.GetByUserID(ctx, parsedUserID)
+	if err != nil {
+		uc.logger.Error("failed get url for user id", err, slog.String("userID", userID))
+	}
+
+	urls := []entity.URL{}
+
+	for k, v := range storageURLs {
+		shortURL := &url.URL{
+			Scheme: uc.baseURL.Scheme,
+			Host:   uc.baseURL.Host,
+		}
+		shortURL.Path = encodeUUID(k)
+		urls = append(urls, entity.NewURL(k, parsedUserID, shortURL, &v))
+	}
+
+	return urls, nil
 }
 
 func New(s storage.URL, cfg config.ShortURL) *useCase {
 	log := slog.New(slog.NewJSONHandler(os.Stdout).
 		WithAttrs([]slog.Attr{slog.String("service", "shortener")}))
 	return &useCase{
-		counter: cfg.GetCounter(),
 		baseURL: cfg.GetBaseURL(),
 		storage: s,
 		logger:  log,

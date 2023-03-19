@@ -8,6 +8,8 @@ import (
 
 	"github.com/google/uuid"
 	"golang.org/x/exp/slog"
+
+	entity "github.com/sreway/shorturl/internal/domain/url"
 )
 
 type repo struct {
@@ -45,15 +47,15 @@ func (r *repo) Get(ctx context.Context, id [16]byte) (value url.URL, userID [16]
 	return *i.Value, i.UserID, nil
 }
 
-func (r *repo) GetByUserID(ctx context.Context, userID [16]byte) (map[[16]byte]url.URL, error) {
+func (r *repo) GetByUserID(ctx context.Context, userID [16]byte) ([]entity.URL, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	_ = ctx
-	result := map[[16]byte]url.URL{}
+	result := []entity.URL{}
 
 	for k, v := range r.data {
 		if v.UserID == userID {
-			result[k] = *v.Value
+			result = append(result, entity.NewURL(k, v.UserID, nil, v.Value))
 		}
 	}
 

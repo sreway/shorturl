@@ -10,6 +10,7 @@ type (
 		UserID() [16]byte
 		LongURL() *url.URL
 		ShortURL() *url.URL
+		SetShortURL(value *url.URL)
 	}
 
 	entity struct {
@@ -34,6 +35,10 @@ func (e *entity) ShortURL() *url.URL {
 
 func (e *entity) UserID() [16]byte {
 	return e.userID
+}
+
+func (e *entity) SetShortURL(value *url.URL) {
+	e.shortURL = value
 }
 
 func NewURL(id, userID [16]byte, shortURL, longURL *url.URL) *entity {

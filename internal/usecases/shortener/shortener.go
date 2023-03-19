@@ -87,20 +87,18 @@ func (uc *useCase) GetUserURLs(ctx context.Context, userID string) ([]entity.URL
 		return nil, err
 	}
 
-	storageURLs, err := uc.storage.GetByUserID(ctx, parsedUserID)
+	urls, err := uc.storage.GetByUserID(ctx, parsedUserID)
 	if err != nil {
 		uc.logger.Error("failed get url for user id", err, slog.String("userID", userID))
 	}
 
-	urls := []entity.URL{}
-
-	for k, v := range storageURLs {
+	for idx, i := range urls {
 		shortURL := &url.URL{
 			Scheme: uc.baseURL.Scheme,
 			Host:   uc.baseURL.Host,
 		}
-		shortURL.Path = encodeUUID(k)
-		urls = append(urls, entity.NewURL(k, parsedUserID, shortURL, &v))
+		shortURL.Path = encodeUUID(i.ID())
+		urls[idx].SetShortURL(shortURL)
 	}
 
 	return urls, nil

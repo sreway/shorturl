@@ -6,10 +6,11 @@ package storageMock
 
 import (
 	context "context"
-	url "net/url"
+	url0 "net/url"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	url "github.com/sreway/shorturl/internal/domain/url"
 )
 
 // MockURL is a mock of URL interface.
@@ -36,7 +37,7 @@ func (m *MockURL) EXPECT() *MockURLMockRecorder {
 }
 
 // Add mocks base method.
-func (m *MockURL) Add(ctx context.Context, id, userID [16]byte, value *url.URL) error {
+func (m *MockURL) Add(ctx context.Context, id, userID [16]byte, value *url0.URL) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Add", ctx, id, userID, value)
 	ret0, _ := ret[0].(error)
@@ -64,10 +65,10 @@ func (mr *MockURLMockRecorder) Close() *gomock.Call {
 }
 
 // Get mocks base method.
-func (m *MockURL) Get(ctx context.Context, id [16]byte) (url.URL, [16]byte, error) {
+func (m *MockURL) Get(ctx context.Context, id [16]byte) (url0.URL, [16]byte, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", ctx, id)
-	ret0, _ := ret[0].(url.URL)
+	ret0, _ := ret[0].(url0.URL)
 	ret1, _ := ret[1].([16]byte)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -80,10 +81,10 @@ func (mr *MockURLMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 }
 
 // GetByUserID mocks base method.
-func (m *MockURL) GetByUserID(ctx context.Context, userID [16]byte) (map[[16]byte]url.URL, error) {
+func (m *MockURL) GetByUserID(ctx context.Context, userID [16]byte) ([]url.URL, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByUserID", ctx, userID)
-	ret0, _ := ret[0].(map[[16]byte]url.URL)
+	ret0, _ := ret[0].([]url.URL)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

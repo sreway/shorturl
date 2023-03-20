@@ -33,11 +33,9 @@ func (r *repo) Add(ctx context.Context, id, userID [16]byte, value *url.URL) err
 	return nil
 }
 
-func (r *repo) Get(ctx context.Context, id [16]byte) (value url.URL, userID [16]byte, err error) {
+func (r *repo) Get(_ context.Context, id [16]byte) (value url.URL, userID [16]byte, err error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-
-	_ = ctx
 
 	i, ok := r.data[id]
 	if !ok {
@@ -47,10 +45,9 @@ func (r *repo) Get(ctx context.Context, id [16]byte) (value url.URL, userID [16]
 	return *i.Value, i.UserID, nil
 }
 
-func (r *repo) GetByUserID(ctx context.Context, userID [16]byte) ([]entity.URL, error) {
+func (r *repo) GetByUserID(_ context.Context, userID [16]byte) ([]entity.URL, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	_ = ctx
 	result := []entity.URL{}
 
 	for k, v := range r.data {
@@ -74,6 +71,10 @@ func (r *repo) Close() error {
 
 	r.logger.Info("success close url repository file")
 	return nil
+}
+
+func (r *repo) Ping(_ context.Context) error {
+	return ErrInvalidStorageType
 }
 
 func New(opts ...Option) *repo {

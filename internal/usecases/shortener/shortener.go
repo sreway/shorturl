@@ -104,6 +104,10 @@ func (uc *useCase) GetUserURLs(ctx context.Context, userID string) ([]entity.URL
 	return urls, nil
 }
 
+func (uc *useCase) StorageCheck(ctx context.Context) error {
+	return uc.storage.Ping(ctx)
+}
+
 func New(s storage.URL, cfg config.ShortURL) *useCase {
 	log := slog.New(slog.NewJSONHandler(os.Stdout).
 		WithAttrs([]slog.Attr{slog.String("service", "shortener")}))

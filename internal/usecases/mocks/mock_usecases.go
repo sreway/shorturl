@@ -79,3 +79,17 @@ func (mr *MockShortenerMockRecorder) GetUserURLs(ctx, userID interface{}) *gomoc
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserURLs", reflect.TypeOf((*MockShortener)(nil).GetUserURLs), ctx, userID)
 }
+
+// StorageCheck mocks base method.
+func (m *MockShortener) StorageCheck(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StorageCheck", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// StorageCheck indicates an expected call of StorageCheck.
+func (mr *MockShortenerMockRecorder) StorageCheck(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StorageCheck", reflect.TypeOf((*MockShortener)(nil).StorageCheck), ctx)
+}

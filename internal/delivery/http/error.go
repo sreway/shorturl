@@ -9,4 +9,5 @@ var (
 	ErrInvalidSlug    = errors.New("invalid slug")
 	ErrDecodeBody     = errors.New("failed decode body")
 	ErrInvalidRequest = errors.New("invalid url request")
+	ErrStorageCheck   = errors.New("failed storage check")
 )

@@ -176,6 +176,16 @@ func (d *delivery) getUserURLs(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (d *delivery) Ping(w http.ResponseWriter, r *http.Request) {
+	err := d.shortener.StorageCheck(r.Context())
+	if err != nil {
+		d.logger.Error("failed check storage", err, slog.String("handler", "Ping"))
+		handelErrURL(w, ErrStorageCheck)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
 func handelErrURL(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, ErrEmptyBody):
@@ -194,6 +204,8 @@ func handelErrURL(w http.ResponseWriter, err error) {
 		w.WriteHeader(http.StatusBadRequest)
 	case errors.Is(err, ErrInvalidRequest):
 		w.WriteHeader(http.StatusBadRequest)
+	case errors.Is(err, ErrStorageCheck):
+		w.WriteHeader(http.StatusInternalServerError)
 	default:
 		w.WriteHeader(http.StatusNotImplemented)
 	}

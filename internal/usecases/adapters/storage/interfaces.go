@@ -13,4 +13,5 @@ type URL interface {
 	Get(ctx context.Context, id [16]byte) (value url.URL, userID [16]byte, err error)
 	GetByUserID(ctx context.Context, userID [16]byte) ([]entity.URL, error)
 	Close() error
+	Ping(ctx context.Context) error
 }

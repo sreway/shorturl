@@ -25,6 +25,15 @@ type (
 		GetBaseURL() *url.URL
 	}
 
+	Storage interface {
+		GetPostgres() *postgres
+		GetCache() *cache
+	}
+
+	Postgres interface {
+		GetDSN() string
+	}
+
 	Cache interface {
 		GetFilePath() string
 	}
@@ -54,11 +63,16 @@ type (
 	}
 
 	storage struct {
-		cache *cache
+		cache    *cache
+		postgres *postgres
 	}
 
 	cache struct {
 		FilePath string `env:"FILE_STORAGE_PATH" envDefault:"./storage.json"`
+	}
+
+	postgres struct {
+		DSN string `env:"DATABASE_DSN"`
 	}
 )
 
@@ -102,8 +116,16 @@ func (store *storage) Cache() *cache {
 	return store.cache
 }
 
+func (store *storage) Postgres() *postgres {
+	return store.postgres
+}
+
 func (c *cache) GetFilePath() string {
 	return c.FilePath
+}
+
+func (s *postgres) GetDSN() string {
+	return s.DSN
 }
 
 func NewConfig() (*config, error) {
@@ -113,6 +135,7 @@ func NewConfig() (*config, error) {
 	cfg.http.cookie = new(cookie)
 	cfg.storage = new(storage)
 	cfg.storage.cache = new(cache)
+	cfg.storage.postgres = new(postgres)
 
 	if err := env.Parse(cfg.http); err != nil {
 		return nil, err
@@ -123,6 +146,10 @@ func NewConfig() (*config, error) {
 	}
 
 	if err := env.Parse(cfg.storage.cache); err != nil {
+		return nil, err
+	}
+
+	if err := env.Parse(cfg.storage.postgres); err != nil {
 		return nil, err
 	}
 

@@ -17,6 +17,7 @@ func (d *delivery) routerURL(r chi.Router) {
 	r.Route("/", func(r chi.Router) {
 		r.Post("/", d.addURL)
 		r.Get("/{id}", d.getURL)
+		r.Get("/ping", d.Ping)
 	})
 
 	r.Route("/api", func(r chi.Router) {

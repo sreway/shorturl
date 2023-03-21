@@ -99,7 +99,7 @@ func main() {
 
 		switch {
 		case len(configPostgres.GetDSN()) > 0:
-			repo, err = postgres.New(ctx, configPostgres.GetDSN())
+			repo, err = postgres.New(ctx, configPostgres)
 			if err == nil {
 				log.Info("use postgres repository")
 				break

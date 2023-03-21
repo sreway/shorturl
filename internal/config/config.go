@@ -32,6 +32,7 @@ type (
 
 	Postgres interface {
 		GetDSN() string
+		GetMigrateURL() string
 	}
 
 	Cache interface {
@@ -72,7 +73,8 @@ type (
 	}
 
 	postgres struct {
-		DSN string `env:"DATABASE_DSN"`
+		DSN        string `env:"DATABASE_DSN"`
+		MigrateURL string `env:"MIGRATE_URL" envDefault:"file://migrations/postgres"`
 	}
 )
 
@@ -124,8 +126,12 @@ func (c *cache) GetFilePath() string {
 	return c.FilePath
 }
 
-func (s *postgres) GetDSN() string {
-	return s.DSN
+func (p *postgres) GetDSN() string {
+	return p.DSN
+}
+
+func (p *postgres) GetMigrateURL() string {
+	return p.MigrateURL
 }
 
 func NewConfig() (*config, error) {

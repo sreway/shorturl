@@ -65,13 +65,12 @@ func (mr *MockURLMockRecorder) Close() *gomock.Call {
 }
 
 // Get mocks base method.
-func (m *MockURL) Get(ctx context.Context, id [16]byte) (url0.URL, [16]byte, error) {
+func (m *MockURL) Get(ctx context.Context, id [16]byte) (url.URL, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", ctx, id)
-	ret0, _ := ret[0].(url0.URL)
-	ret1, _ := ret[1].([16]byte)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret0, _ := ret[0].(url.URL)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
@@ -93,4 +92,18 @@ func (m *MockURL) GetByUserID(ctx context.Context, userID [16]byte) ([]url.URL, 
 func (mr *MockURLMockRecorder) GetByUserID(ctx, userID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByUserID", reflect.TypeOf((*MockURL)(nil).GetByUserID), ctx, userID)
+}
+
+// Ping mocks base method.
+func (m *MockURL) Ping(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Ping", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Ping indicates an expected call of Ping.
+func (mr *MockURLMockRecorder) Ping(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockURL)(nil).Ping), ctx)
 }

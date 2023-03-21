@@ -10,6 +10,7 @@ import (
 	"golang.org/x/exp/slog"
 
 	entity "github.com/sreway/shorturl/internal/domain/url"
+	"github.com/sreway/shorturl/internal/usecases/shortener"
 )
 
 type repo struct {
@@ -33,16 +34,15 @@ func (r *repo) Add(ctx context.Context, id, userID [16]byte, value *url.URL) err
 	return nil
 }
 
-func (r *repo) Get(_ context.Context, id [16]byte) (value url.URL, userID [16]byte, err error) {
+func (r *repo) Get(_ context.Context, id [16]byte) (entity.URL, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	i, ok := r.data[id]
 	if !ok {
-		return url.URL{}, [16]byte{}, ErrNotFound
+		return nil, shortener.ErrNotFound
 	}
-
-	return *i.Value, i.UserID, nil
+	return entity.NewURL(id, i.UserID, nil, i.Value), nil
 }
 
 func (r *repo) GetByUserID(_ context.Context, userID [16]byte) ([]entity.URL, error) {

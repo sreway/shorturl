@@ -66,9 +66,10 @@ func (uc *useCase) GetURL(ctx context.Context, urlID string) (entity.URL, error)
 		uc.logger.Error("failed create uuid from url id", err, slog.String("urlID", urlID))
 	}
 
-	longURL, userID, err := uc.storage.Get(ctx, id)
+	u, err := uc.storage.Get(ctx, id)
 	if err != nil {
 		uc.logger.Error("failed get url", err, slog.String("urlID", urlID))
+		return nil, err
 	}
 	shortURL := &url.URL{
 		Scheme: uc.baseURL.Scheme,
@@ -77,7 +78,9 @@ func (uc *useCase) GetURL(ctx context.Context, urlID string) (entity.URL, error)
 
 	shortURL.Path = encodeUUID(id)
 
-	return entity.NewURL(id, userID, shortURL, &longURL), nil
+	u.SetShortURL(shortURL)
+
+	return u, nil
 }
 
 func (uc *useCase) GetUserURLs(ctx context.Context, userID string) ([]entity.URL, error) {

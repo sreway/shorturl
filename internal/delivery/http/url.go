@@ -204,6 +204,8 @@ func handelErrURL(w http.ResponseWriter, err error) {
 		w.WriteHeader(http.StatusBadRequest)
 	case errors.Is(err, ErrInvalidRequest):
 		w.WriteHeader(http.StatusBadRequest)
+	case errors.Is(err, shortener.ErrNotFound):
+		w.WriteHeader(http.StatusNotFound)
 	case errors.Is(err, ErrStorageCheck):
 		w.WriteHeader(http.StatusInternalServerError)
 	default:

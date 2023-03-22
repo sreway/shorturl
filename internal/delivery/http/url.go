@@ -176,6 +176,80 @@ func (d *delivery) getUserURLs(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (d *delivery) BatchURL(w http.ResponseWriter, r *http.Request) {
+	type (
+		reqURL struct {
+			CorrelationID string `json:"correlation_id"`
+			OriginalURL   string `json:"original_url"`
+		}
+
+		respURL struct {
+			CorrelationID string `json:"correlation_id"`
+			ShortURL      string `json:"short_url"`
+		}
+	)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	userID, ok := r.Context().Value(ctxKeyUserID{}).(string)
+	if !ok {
+		d.logger.Error("invalid user id", ErrInvalidRequest,
+			slog.String("userID", userID), slog.String("handler", "BatchURL"))
+		handelErrURL(w, ErrInvalidRequest)
+		return
+	}
+
+	req := new([]reqURL)
+	decoder := json.NewDecoder(r.Body)
+
+	if err := decoder.Decode(&req); err != nil {
+		d.logger.Error("failed decode request url", err, slog.String("handler", "BatchURL"))
+		handelErrURL(w, ErrDecodeBody)
+		return
+	}
+
+	correlationID := []string{}
+	rawURL := []string{}
+
+	for _, item := range *req {
+		correlationID = append(correlationID, item.CorrelationID)
+		rawURL = append(rawURL, item.OriginalURL)
+	}
+
+	if len(correlationID) != len(rawURL) {
+		d.logger.Error("slice correlation id length is not equal to the length of raw slicer URLs",
+			ErrInvalidRequest, slog.String("handler", "BatchURL"))
+		handelErrURL(w, ErrInvalidRequest)
+	}
+
+	urls, err := d.shortener.BatchURL(r.Context(), correlationID, rawURL, userID)
+	if err != nil {
+		d.logger.Error("failed batch add urls", err, slog.String("handler", "BatchURL"))
+	}
+
+	resp := make([]respURL, 0)
+
+	for _, i := range urls {
+		resp = append(resp, respURL{
+			i.CorrelationID(), i.ShortURL().String(),
+		})
+	}
+
+	data, err := json.Marshal(resp)
+	if err != nil {
+		d.logger.Error("failed marshal response url", err, slog.String("handler", "BatchURL"))
+		handelErrURL(w, err)
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	_, err = w.Write(data)
+	if err != nil {
+		d.logger.Error("write body", err, slog.String("handler", "BatchURL"))
+		handelErrURL(w, ErrWriteBody)
+		return
+	}
+}
+
 func (d *delivery) Ping(w http.ResponseWriter, r *http.Request) {
 	err := d.shortener.StorageCheck(r.Context())
 	if err != nil {

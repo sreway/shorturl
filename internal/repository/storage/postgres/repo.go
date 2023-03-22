@@ -32,9 +32,9 @@ func (r *repo) Ping(ctx context.Context) error {
 	return nil
 }
 
-func (r *repo) Add(ctx context.Context, id, userID [16]byte, value *url.URL) error {
+func (r *repo) Add(ctx context.Context, item entity.URL) error {
 	query := "INSERT INTO urls (id, user_id, original_url) VALUES ($1, $2, $3)"
-	_, err := r.pool.Exec(ctx, query, id, userID, value.String())
+	_, err := r.pool.Exec(ctx, query, item.ID(), item.UserID(), item.LongURL().String())
 	if err != nil {
 		r.logger.Error("failed insert short url", err)
 		return err
@@ -99,6 +99,28 @@ func (r *repo) GetByUserID(ctx context.Context, userID [16]byte) ([]entity.URL, 
 func (r *repo) Close() error {
 	r.pool.Close()
 	return nil
+}
+
+func (r *repo) Batch(ctx context.Context, urls []entity.URL) error {
+	tx, err := r.pool.BeginTx(ctx, pgx.TxOptions{})
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+	if err != nil {
+		return err
+	}
+
+	query := "INSERT INTO urls (id, user_id, original_url) VALUES ($1, $2, $3)"
+
+	for _, item := range urls {
+		_, err = r.pool.Exec(ctx, query, item.ID(), item.UserID(), item.LongURL().String())
+		if err != nil {
+			r.logger.Error("failed batch insert short url", err)
+			return err
+		}
+	}
+
+	return tx.Commit(ctx)
 }
 
 func (r *repo) migrate(migrateURL string) error {

@@ -2,7 +2,6 @@ package cache
 
 import (
 	"context"
-	"net/url"
 	"os"
 	"sync"
 
@@ -14,22 +13,22 @@ import (
 )
 
 type repo struct {
-	data    map[uuid.UUID]*item
+	data    map[uuid.UUID]*storageURL
 	file    *os.File
 	fileUse bool
 	logger  *slog.Logger
 	mu      sync.RWMutex
 }
 
-func (r *repo) Add(ctx context.Context, id, userID [16]byte, value *url.URL) error {
+func (r *repo) Add(ctx context.Context, item entity.URL) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	_ = ctx
 
-	r.data[id] = &item{
-		UserID: userID,
-		Value:  value,
+	r.data[item.ID()] = &storageURL{
+		UserID: item.UserID(),
+		Value:  item.LongURL(),
 	}
 	return nil
 }
@@ -77,12 +76,25 @@ func (r *repo) Ping(_ context.Context) error {
 	return ErrInvalidStorageType
 }
 
+func (r *repo) Batch(ctx context.Context, urls []entity.URL) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for _, item := range urls {
+		r.data[item.ID()] = &storageURL{
+			UserID: item.UserID(),
+			Value:  item.LongURL(),
+		}
+	}
+	return nil
+}
+
 func New(opts ...Option) *repo {
 	log := slog.New(slog.NewJSONHandler(os.Stdout).
 		WithAttrs([]slog.Attr{slog.String("repository", "cache")}))
 
 	r := &repo{
-		data:   map[uuid.UUID]*item{},
+		data:   map[uuid.UUID]*storageURL{},
 		logger: log,
 	}
 

@@ -6,7 +6,6 @@ package storageMock
 
 import (
 	context "context"
-	url0 "net/url"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -37,17 +36,31 @@ func (m *MockURL) EXPECT() *MockURLMockRecorder {
 }
 
 // Add mocks base method.
-func (m *MockURL) Add(ctx context.Context, id, userID [16]byte, value *url0.URL) error {
+func (m *MockURL) Add(ctx context.Context, url url.URL) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Add", ctx, id, userID, value)
+	ret := m.ctrl.Call(m, "Add", ctx, url)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Add indicates an expected call of Add.
-func (mr *MockURLMockRecorder) Add(ctx, id, userID, value interface{}) *gomock.Call {
+func (mr *MockURLMockRecorder) Add(ctx, url interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockURL)(nil).Add), ctx, id, userID, value)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockURL)(nil).Add), ctx, url)
+}
+
+// Batch mocks base method.
+func (m *MockURL) Batch(ctx context.Context, urls []url.URL) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Batch", ctx, urls)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Batch indicates an expected call of Batch.
+func (mr *MockURLMockRecorder) Batch(ctx, urls interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Batch", reflect.TypeOf((*MockURL)(nil).Batch), ctx, urls)
 }
 
 // Close mocks base method.

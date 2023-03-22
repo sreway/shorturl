@@ -41,7 +41,9 @@ func (uc *useCase) CreateURL(ctx context.Context, rawURL string, userID string) 
 
 	shortURL.Path = encodeUUID(id)
 
-	err = uc.storage.Add(ctx, id, parsedUserID, longURL)
+	addURL := entity.NewURL(id, parsedUserID, shortURL, longURL)
+
+	err = uc.storage.Add(ctx, addURL)
 	if err != nil {
 		uc.logger.Error("store url", err, slog.String("id", id.String()),
 			slog.String("longURL", longURL.String()),
@@ -49,9 +51,7 @@ func (uc *useCase) CreateURL(ctx context.Context, rawURL string, userID string) 
 		return nil, err
 	}
 
-	u := entity.NewURL(id, parsedUserID, shortURL, longURL)
-
-	return u, nil
+	return addURL, nil
 }
 
 func (uc *useCase) GetURL(ctx context.Context, urlID string) (entity.URL, error) {
@@ -109,6 +109,43 @@ func (uc *useCase) GetUserURLs(ctx context.Context, userID string) ([]entity.URL
 
 func (uc *useCase) StorageCheck(ctx context.Context) error {
 	return uc.storage.Ping(ctx)
+}
+
+func (uc *useCase) BatchURL(ctx context.Context, correlationID, rawURL []string, userID string) ([]entity.URL, error) {
+	urls := []entity.URL{}
+
+	for idx, item := range rawURL {
+		longURL, err := url.ParseRequestURI(item)
+		if err != nil {
+			uc.logger.Error("parse long url", err, slog.String("BatchURL", item))
+			return nil, ErrParseURL
+		}
+
+		shortURL := &url.URL{
+			Scheme: uc.baseURL.Scheme,
+			Host:   uc.baseURL.Host,
+		}
+
+		parsedUserID, err := uuid.ParseBytes([]byte(userID))
+		if err != nil {
+			uc.logger.Error("failed parse RFC 4122 uuid from user id", err, slog.String("userID", userID))
+			return nil, err
+		}
+
+		id := uuid.New()
+		shortURL.Path = encodeUUID(id)
+
+		u := entity.NewURL(id, parsedUserID, shortURL, longURL)
+		u.SetCorrelationID(correlationID[idx])
+		urls = append(urls, u)
+	}
+
+	err := uc.storage.Batch(ctx, urls)
+	if err != nil {
+		return nil, err
+	}
+
+	return urls, nil
 }
 
 func New(s storage.URL, cfg config.ShortURL) *useCase {

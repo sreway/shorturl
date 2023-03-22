@@ -7,23 +7,23 @@ import (
 	"github.com/google/uuid"
 )
 
-type item struct {
+type storageURL struct {
 	UserID uuid.UUID
 	Value  *url.URL
 }
 
-func (i item) MarshalJSON() ([]byte, error) {
+func (s storageURL) MarshalJSON() ([]byte, error) {
 	type alias struct {
 		UserID uuid.UUID `json:"user_id"`
 		Value  string    `json:"value"`
 	}
 	aliasValue := alias{}
-	aliasValue.UserID = i.UserID
-	aliasValue.Value = i.Value.String()
+	aliasValue.UserID = s.UserID
+	aliasValue.Value = s.Value.String()
 	return json.Marshal(aliasValue)
 }
 
-func (i *item) UnmarshalJSON(data []byte) error {
+func (s *storageURL) UnmarshalJSON(data []byte) error {
 	type alias struct {
 		UserID uuid.UUID `json:"user_id"`
 		Value  string    `json:"value"`
@@ -39,8 +39,8 @@ func (i *item) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	i.UserID = aliasValue.UserID
-	i.Value = parsedValue
+	s.UserID = aliasValue.UserID
+	s.Value = parsedValue
 
 	return nil
 }

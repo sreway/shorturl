@@ -9,6 +9,7 @@ import (
 
 	"golang.org/x/exp/slog"
 
+	entity "github.com/sreway/shorturl/internal/domain/url"
 	"github.com/sreway/shorturl/internal/usecases/shortener"
 )
 
@@ -40,11 +41,14 @@ func (d *delivery) addURL(w http.ResponseWriter, r *http.Request) {
 	u, err := d.shortener.CreateURL(r.Context(), string(b), userID)
 	if err != nil {
 		handelErrURL(w, err)
-		return
+	} else {
+		w.WriteHeader(http.StatusCreated)
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	_, err = w.Write([]byte(u.ShortURL().String()))
+	if err != nil && !errors.Is(err, entity.ErrAlreadyExist) {
+		return
+	}
+	_, err = w.Write([]byte(u.ShortURL()))
 	if err != nil {
 		d.logger.Error("write body", err, slog.String("handler", "AddURL"))
 		handelErrURL(w, ErrWriteBody)
@@ -68,7 +72,7 @@ func (d *delivery) getURL(w http.ResponseWriter, r *http.Request) {
 		handelErrURL(w, err)
 		return
 	}
-	w.Header().Set("Location", u.LongURL().String())
+	w.Header().Set("Location", u.LongURL())
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
@@ -101,15 +105,20 @@ func (d *delivery) shortURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	res := new(respURL)
+
 	u, err := d.shortener.CreateURL(r.Context(), req.URL, userID)
 	if err != nil {
 		handelErrURL(w, err)
+	} else {
+		w.WriteHeader(http.StatusCreated)
+	}
+
+	if err != nil && !errors.Is(err, entity.ErrAlreadyExist) {
 		return
 	}
 
-	res := new(respURL)
-
-	res.Result = u.ShortURL().String()
+	res.Result = u.ShortURL()
 
 	// not use json encoder because it add new line for stream
 	data, err := json.Marshal(res)
@@ -118,7 +127,6 @@ func (d *delivery) shortURL(w http.ResponseWriter, r *http.Request) {
 		handelErrURL(w, err)
 	}
 
-	w.WriteHeader(http.StatusCreated)
 	_, err = w.Write(data)
 	if err != nil {
 		d.logger.Error("write body", err, slog.String("handler", "shortURL"))
@@ -158,8 +166,8 @@ func (d *delivery) getUserURLs(w http.ResponseWriter, r *http.Request) {
 
 	for _, url := range urls {
 		resp = append(resp, respURL{
-			url.ShortURL().String(),
-			url.LongURL().String(),
+			url.ShortURL(),
+			url.LongURL(),
 		})
 	}
 
@@ -225,13 +233,15 @@ func (d *delivery) BatchURL(w http.ResponseWriter, r *http.Request) {
 	urls, err := d.shortener.BatchURL(r.Context(), correlationID, rawURL, userID)
 	if err != nil {
 		d.logger.Error("failed batch add urls", err, slog.String("handler", "BatchURL"))
+		handelErrURL(w, err)
+		return
 	}
 
 	resp := make([]respURL, 0)
 
 	for _, i := range urls {
 		resp = append(resp, respURL{
-			i.CorrelationID(), i.ShortURL().String(),
+			i.CorrelationID(), i.ShortURL(),
 		})
 	}
 
@@ -239,6 +249,7 @@ func (d *delivery) BatchURL(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		d.logger.Error("failed marshal response url", err, slog.String("handler", "BatchURL"))
 		handelErrURL(w, err)
+		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -278,8 +289,10 @@ func handelErrURL(w http.ResponseWriter, err error) {
 		w.WriteHeader(http.StatusBadRequest)
 	case errors.Is(err, ErrInvalidRequest):
 		w.WriteHeader(http.StatusBadRequest)
-	case errors.Is(err, shortener.ErrNotFound):
+	case errors.Is(err, entity.ErrNotFound):
 		w.WriteHeader(http.StatusNotFound)
+	case errors.Is(err, entity.ErrAlreadyExist):
+		w.WriteHeader(http.StatusConflict)
 	case errors.Is(err, ErrStorageCheck):
 		w.WriteHeader(http.StatusInternalServerError)
 	default:

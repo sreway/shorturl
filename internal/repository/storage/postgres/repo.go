@@ -3,10 +3,15 @@ package postgres
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/url"
 	"os"
 
 	"github.com/golang-migrate/migrate/v4"
+	"github.com/google/uuid"
+	"github.com/jackc/pgconn"
+	"github.com/jackc/pgerrcode"
+
 	// migrate tools
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -16,7 +21,6 @@ import (
 
 	"github.com/sreway/shorturl/internal/config"
 	entity "github.com/sreway/shorturl/internal/domain/url"
-	"github.com/sreway/shorturl/internal/usecases/shortener"
 )
 
 type repo struct {
@@ -33,25 +37,60 @@ func (r *repo) Ping(ctx context.Context) error {
 }
 
 func (r *repo) Add(ctx context.Context, item entity.URL) error {
-	query := "INSERT INTO urls (id, user_id, original_url) VALUES ($1, $2, $3)"
-	_, err := r.pool.Exec(ctx, query, item.ID(), item.UserID(), item.LongURL().String())
+	tx, err := r.pool.BeginTx(ctx, pgx.TxOptions{})
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
 	if err != nil {
-		r.logger.Error("failed insert short url", err)
 		return err
 	}
-	return nil
+
+	var (
+		id     uuid.UUID
+		userID uuid.UUID
+		pgErr  *pgconn.PgError
+	)
+
+	id = item.ID()
+	userID = item.UserID()
+
+	query := "INSERT INTO urls (id, user_id, original_url) VALUES ($1, $2, $3)"
+	_, err = tx.Exec(ctx, query, id, userID, item.LongURL())
+	if errors.As(err, &pgErr) {
+		switch pgErr.Code {
+		case pgerrcode.UniqueViolation:
+			query = "SELECT id FROM urls WHERE original_url = $1"
+			err = r.pool.QueryRow(ctx, query, item.LongURL()).Scan(&id)
+			if err != nil {
+				if errors.Is(err, pgx.ErrNoRows) {
+					return entity.NewURLErr(id, userID, err)
+				}
+				return err
+			}
+			return entity.NewURLErr(id, uuid.UUID{}, entity.ErrAlreadyExist)
+		default:
+			r.logger.Error("postgres error", err, slog.String("code", pgErr.Code))
+			return entity.NewURLErr(id, userID, err)
+		}
+	}
+
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
-func (r *repo) Get(ctx context.Context, id [16]byte) (entity.URL, error) {
+func (r *repo) Get(ctx context.Context, id uuid.UUID) (entity.URL, error) {
 	var (
-		userID [16]byte
+		userID uuid.UUID
 		rawURL string
 	)
 	query := "SELECT user_id, original_url FROM urls WHERE id = $1"
 	err := r.pool.QueryRow(ctx, query, id).Scan(&userID, &rawURL)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, shortener.ErrNotFound
+			return nil, entity.NewURLErr(id, uuid.UUID{}, entity.ErrNotFound)
 		}
 		return nil, err
 	}
@@ -63,20 +102,20 @@ func (r *repo) Get(ctx context.Context, id [16]byte) (entity.URL, error) {
 		return nil, err
 	}
 
-	return entity.NewURL(id, userID, nil, value), nil
+	return entity.NewURL(id, userID, url.URL{}, *value), nil
 }
 
-func (r *repo) GetByUserID(ctx context.Context, userID [16]byte) ([]entity.URL, error) {
+func (r *repo) GetByUserID(ctx context.Context, userID uuid.UUID) ([]entity.URL, error) {
 	urls := make([]entity.URL, 0)
+
 	query := "SELECT id, original_url FROM urls WHERE user_id = $1"
 	rows, err := r.pool.Query(ctx, query, userID)
 	if err != nil {
 		return nil, err
 	}
-
 	for rows.Next() {
 		var (
-			id     [16]byte
+			id     uuid.UUID
 			rawURL string
 		)
 		if err = rows.Scan(&id, &rawURL); err != nil {
@@ -90,7 +129,8 @@ func (r *repo) GetByUserID(ctx context.Context, userID [16]byte) ([]entity.URL, 
 			return nil, err
 		}
 
-		urls = append(urls, entity.NewURL(id, userID, nil, value))
+		urls = append(urls, entity.NewURL(id, userID, url.URL{}, *value))
+		fmt.Println(urls)
 	}
 
 	return urls, nil
@@ -109,13 +149,22 @@ func (r *repo) Batch(ctx context.Context, urls []entity.URL) error {
 	if err != nil {
 		return err
 	}
+	var pgErr *pgconn.PgError
 
 	query := "INSERT INTO urls (id, user_id, original_url) VALUES ($1, $2, $3)"
-
 	for _, item := range urls {
-		_, err = r.pool.Exec(ctx, query, item.ID(), item.UserID(), item.LongURL().String())
+		_, err = tx.Exec(ctx, query, item.ID(), item.UserID(), item.LongURL())
+		if errors.As(err, &pgErr) {
+			switch pgErr.Code {
+			case pgerrcode.UniqueViolation:
+				return entity.NewURLErr(item.ID(), item.UserID(), entity.ErrAlreadyExist)
+			default:
+				r.logger.Error("postgres error", err, slog.String("code", pgErr.Code))
+				return entity.NewURLErr(item.ID(), item.UserID(), err)
+			}
+		}
+
 		if err != nil {
-			r.logger.Error("failed batch insert short url", err)
 			return err
 		}
 	}

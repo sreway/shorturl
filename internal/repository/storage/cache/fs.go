@@ -8,7 +8,7 @@ import (
 )
 
 type fs struct {
-	Data map[uuid.UUID]*storageURL `json:"data"`
+	Data map[uuid.UUID]storageURL `json:"data"`
 }
 
 func (r *repo) fileOpen(path string) error {

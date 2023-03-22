@@ -2,6 +2,7 @@ package shortener
 
 import (
 	"context"
+	"errors"
 	"net/url"
 	"os"
 
@@ -26,7 +27,7 @@ func (uc *useCase) CreateURL(ctx context.Context, rawURL string, userID string) 
 		return nil, ErrParseURL
 	}
 
-	shortURL := &url.URL{
+	shortURL := url.URL{
 		Scheme: uc.baseURL.Scheme,
 		Host:   uc.baseURL.Host,
 	}
@@ -41,14 +42,25 @@ func (uc *useCase) CreateURL(ctx context.Context, rawURL string, userID string) 
 
 	shortURL.Path = encodeUUID(id)
 
-	addURL := entity.NewURL(id, parsedUserID, shortURL, longURL)
-
+	addURL := entity.NewURL(id, parsedUserID, shortURL, *longURL)
 	err = uc.storage.Add(ctx, addURL)
-	if err != nil {
+	if err != nil && !errors.Is(err, entity.ErrAlreadyExist) {
 		uc.logger.Error("store url", err, slog.String("id", id.String()),
 			slog.String("longURL", longURL.String()),
 		)
 		return nil, err
+	}
+	if errors.Is(err, entity.ErrAlreadyExist) {
+		uc.logger.Error("store url", err, slog.String("id", id.String()),
+			slog.String("longURL", longURL.String()),
+		)
+
+		var errURL *entity.ErrURL
+		if errors.As(err, &errURL) {
+			shortURL.Path = encodeUUID(errURL.ID())
+			addURL.SetShortURL(shortURL)
+			return addURL, err
+		}
 	}
 
 	return addURL, nil
@@ -71,7 +83,7 @@ func (uc *useCase) GetURL(ctx context.Context, urlID string) (entity.URL, error)
 		uc.logger.Error("failed get url", err, slog.String("urlID", urlID))
 		return nil, err
 	}
-	shortURL := &url.URL{
+	shortURL := url.URL{
 		Scheme: uc.baseURL.Scheme,
 		Host:   uc.baseURL.Host,
 	}
@@ -84,19 +96,18 @@ func (uc *useCase) GetURL(ctx context.Context, urlID string) (entity.URL, error)
 }
 
 func (uc *useCase) GetUserURLs(ctx context.Context, userID string) ([]entity.URL, error) {
-	parsedUserID, err := uuid.ParseBytes([]byte(userID))
+	parsedUserID, err := uuid.Parse(userID)
 	if err != nil {
 		uc.logger.Error("failed parse RFC 4122 uuid from user id", err, slog.String("userID", userID))
 		return nil, err
 	}
-
 	urls, err := uc.storage.GetByUserID(ctx, parsedUserID)
 	if err != nil {
 		uc.logger.Error("failed get url for user id", err, slog.String("userID", userID))
 	}
 
 	for idx, i := range urls {
-		shortURL := &url.URL{
+		shortURL := url.URL{
 			Scheme: uc.baseURL.Scheme,
 			Host:   uc.baseURL.Host,
 		}
@@ -121,7 +132,7 @@ func (uc *useCase) BatchURL(ctx context.Context, correlationID, rawURL []string,
 			return nil, ErrParseURL
 		}
 
-		shortURL := &url.URL{
+		shortURL := url.URL{
 			Scheme: uc.baseURL.Scheme,
 			Host:   uc.baseURL.Host,
 		}
@@ -135,7 +146,7 @@ func (uc *useCase) BatchURL(ctx context.Context, correlationID, rawURL []string,
 		id := uuid.New()
 		shortURL.Path = encodeUUID(id)
 
-		u := entity.NewURL(id, parsedUserID, shortURL, longURL)
+		u := entity.NewURL(id, parsedUserID, shortURL, *longURL)
 		u.SetCorrelationID(correlationID[idx])
 		urls = append(urls, u)
 	}

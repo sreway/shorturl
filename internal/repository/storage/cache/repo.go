@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"net/url"
 	"os"
 	"sync"
 
@@ -9,11 +10,10 @@ import (
 	"golang.org/x/exp/slog"
 
 	entity "github.com/sreway/shorturl/internal/domain/url"
-	"github.com/sreway/shorturl/internal/usecases/shortener"
 )
 
 type repo struct {
-	data    map[uuid.UUID]*storageURL
+	data    map[uuid.UUID]storageURL
 	file    *os.File
 	fileUse bool
 	logger  *slog.Logger
@@ -26,32 +26,33 @@ func (r *repo) Add(ctx context.Context, item entity.URL) error {
 
 	_ = ctx
 
-	r.data[item.ID()] = &storageURL{
+	r.data[item.ID()] = storageURL{
 		UserID: item.UserID(),
-		Value:  item.LongURL(),
+		Value:  item.LongValue(),
 	}
 	return nil
 }
 
-func (r *repo) Get(_ context.Context, id [16]byte) (entity.URL, error) {
+func (r *repo) Get(_ context.Context, id uuid.UUID) (entity.URL, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	i, ok := r.data[id]
 	if !ok {
-		return nil, shortener.ErrNotFound
+		return nil, entity.ErrNotFound
 	}
-	return entity.NewURL(id, i.UserID, nil, i.Value), nil
+	return entity.NewURL(uuid.UUID{}, i.UserID, url.URL{}, i.Value), nil
 }
 
-func (r *repo) GetByUserID(_ context.Context, userID [16]byte) ([]entity.URL, error) {
+func (r *repo) GetByUserID(_ context.Context, userID uuid.UUID) ([]entity.URL, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	result := []entity.URL{}
 
 	for k, v := range r.data {
 		if v.UserID == userID {
-			result = append(result, entity.NewURL(k, v.UserID, nil, v.Value))
+			u := entity.NewURL(k, v.UserID, url.URL{}, v.Value)
+			result = append(result, u)
 		}
 	}
 
@@ -76,14 +77,14 @@ func (r *repo) Ping(_ context.Context) error {
 	return ErrInvalidStorageType
 }
 
-func (r *repo) Batch(ctx context.Context, urls []entity.URL) error {
+func (r *repo) Batch(_ context.Context, urls []entity.URL) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	for _, item := range urls {
-		r.data[item.ID()] = &storageURL{
+		r.data[item.ID()] = storageURL{
 			UserID: item.UserID(),
-			Value:  item.LongURL(),
+			Value:  item.LongValue(),
 		}
 	}
 	return nil
@@ -94,7 +95,7 @@ func New(opts ...Option) *repo {
 		WithAttrs([]slog.Attr{slog.String("repository", "cache")}))
 
 	r := &repo{
-		data:   map[uuid.UUID]*storageURL{},
+		data:   map[uuid.UUID]storageURL{},
 		logger: log,
 	}
 

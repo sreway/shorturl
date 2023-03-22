@@ -9,7 +9,7 @@ import (
 
 type storageURL struct {
 	UserID uuid.UUID
-	Value  *url.URL
+	Value  url.URL
 }
 
 func (s storageURL) MarshalJSON() ([]byte, error) {
@@ -40,7 +40,7 @@ func (s *storageURL) UnmarshalJSON(data []byte) error {
 	}
 
 	s.UserID = aliasValue.UserID
-	s.Value = parsedValue
+	s.Value = *parsedValue
 
 	return nil
 }

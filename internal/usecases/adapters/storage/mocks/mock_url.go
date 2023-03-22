@@ -9,6 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	uuid "github.com/google/uuid"
 	url "github.com/sreway/shorturl/internal/domain/url"
 )
 
@@ -78,7 +79,7 @@ func (mr *MockURLMockRecorder) Close() *gomock.Call {
 }
 
 // Get mocks base method.
-func (m *MockURL) Get(ctx context.Context, id [16]byte) (url.URL, error) {
+func (m *MockURL) Get(ctx context.Context, id uuid.UUID) (url.URL, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", ctx, id)
 	ret0, _ := ret[0].(url.URL)
@@ -93,7 +94,7 @@ func (mr *MockURLMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 }
 
 // GetByUserID mocks base method.
-func (m *MockURL) GetByUserID(ctx context.Context, userID [16]byte) ([]url.URL, error) {
+func (m *MockURL) GetByUserID(ctx context.Context, userID uuid.UUID) ([]url.URL, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByUserID", ctx, userID)
 	ret0, _ := ret[0].([]url.URL)

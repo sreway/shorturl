@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
+//go:generate  mockgen -source=./internal/domain/url/url.go -destination=./internal/domain/url/mock/mock_url.go -package=urlMock
 type (
 	URL interface {
 		ID() uuid.UUID

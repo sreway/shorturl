@@ -113,6 +113,7 @@ func (r *repo) GetByUserID(ctx context.Context, userID uuid.UUID) ([]entity.URL,
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		var (
 			id     uuid.UUID

@@ -6,7 +6,7 @@ import (
 	"github.com/sreway/shorturl/internal/domain/url"
 )
 
-//go:generate mockgen -source=./internal/usecases/interfaces.go -destination=./internal/usecases/mocks/mock_usecases.go -package=usecaseMock
+//go:generate mockgen -source=./internal/usecases/interfaces.go -destination=./internal/usecases/mock/mock_usecases.go -package=usecaseMock
 type Shortener interface {
 	CreateURL(ctx context.Context, rawURL string, userID string) (url.URL, error)
 	BatchURL(ctx context.Context, correlationID, rawURL []string, userID string) ([]url.URL, error)

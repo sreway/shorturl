@@ -223,8 +223,13 @@ func (d *delivery) BatchURL(w http.ResponseWriter, r *http.Request) {
 	rawURL := []string{}
 
 	for _, item := range *req {
-		correlationID = append(correlationID, item.CorrelationID)
-		rawURL = append(rawURL, item.OriginalURL)
+		if item.CorrelationID != "" {
+			correlationID = append(correlationID, item.CorrelationID)
+		}
+
+		if item.OriginalURL != "" {
+			rawURL = append(rawURL, item.OriginalURL)
+		}
 	}
 
 	if len(correlationID) != len(rawURL) {

@@ -76,7 +76,7 @@ func (uc *useCase) GetURL(ctx context.Context, urlID string) (entity.URL, error)
 	id, err := uuid.FromBytes(decoded)
 	if err != nil {
 		uc.logger.Error("failed create uuid from url id", err, slog.String("urlID", urlID))
-		return nil, err
+		return nil, ErrParseUUID
 	}
 
 	u, err := uc.storage.Get(ctx, id)
@@ -100,7 +100,7 @@ func (uc *useCase) GetUserURLs(ctx context.Context, userID string) ([]entity.URL
 	parsedUserID, err := uuid.Parse(userID)
 	if err != nil {
 		uc.logger.Error("failed parse RFC 4122 uuid from user id", err, slog.String("userID", userID))
-		return nil, err
+		return nil, ErrParseUUID
 	}
 	urls, err := uc.storage.GetByUserID(ctx, parsedUserID)
 	if err != nil {
@@ -142,7 +142,7 @@ func (uc *useCase) BatchURL(ctx context.Context, correlationID, rawURL []string,
 		parsedUserID, err := uuid.ParseBytes([]byte(userID))
 		if err != nil {
 			uc.logger.Error("failed parse RFC 4122 uuid from user id", err, slog.String("userID", userID))
-			return nil, err
+			return nil, ErrParseUUID
 		}
 
 		id := uuid.New()

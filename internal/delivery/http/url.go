@@ -288,6 +288,8 @@ func handelErrURL(w http.ResponseWriter, err error) {
 		w.WriteHeader(http.StatusBadRequest)
 	case errors.Is(err, shortener.ErrParseURL):
 		w.WriteHeader(http.StatusBadRequest)
+	case errors.Is(err, shortener.ErrParseUUID):
+		w.WriteHeader(http.StatusBadRequest)
 	case errors.Is(err, ErrInvalidRequest):
 		w.WriteHeader(http.StatusBadRequest)
 	case errors.Is(err, entity.ErrNotFound):

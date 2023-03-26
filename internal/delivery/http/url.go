@@ -228,6 +228,7 @@ func (d *delivery) BatchURL(w http.ResponseWriter, r *http.Request) {
 		d.logger.Error("slice correlation id length is not equal to the length of raw slicer URLs",
 			ErrInvalidRequest, slog.String("handler", "BatchURL"))
 		handelErrURL(w, ErrInvalidRequest)
+		return
 	}
 
 	urls, err := d.shortener.BatchURL(r.Context(), correlationID, rawURL, userID)

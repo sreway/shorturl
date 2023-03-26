@@ -114,9 +114,10 @@ func Test_delivery_addURL(t *testing.T) {
 
 	anyMock := gomock.Any()
 	userID := uuid.New().String()
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
 	for _, tt := range tests {
-		ctl := gomock.NewController(t)
-		defer ctl.Finish()
 		uc := usecasesMock.NewMockShortener(ctl)
 		url := urlMock.NewMockURL(ctl)
 		url.EXPECT().ShortURL().Return(tt.fields.useCaseShortURL).AnyTimes()
@@ -220,10 +221,10 @@ func Test_delivery_getURL(t *testing.T) {
 
 	anyMock := gomock.Any()
 	userID := uuid.New().String()
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
 
 	for _, tt := range tests {
-		ctl := gomock.NewController(t)
-		defer ctl.Finish()
 		uc := usecasesMock.NewMockShortener(ctl)
 		url := urlMock.NewMockURL(ctl)
 		url.EXPECT().LongURL().Return(tt.fields.useCaseLongURL).AnyTimes()
@@ -342,9 +343,10 @@ func Test_delivery_shortURL(t *testing.T) {
 
 	anyMock := gomock.Any()
 	userID := uuid.New().String()
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
 	for _, tt := range tests {
-		ctl := gomock.NewController(t)
-		defer ctl.Finish()
 		uc := usecasesMock.NewMockShortener(ctl)
 		url := urlMock.NewMockURL(ctl)
 		url.EXPECT().ShortURL().Return(tt.fields.useCaseShortURL).AnyTimes()
@@ -453,9 +455,10 @@ func Test_delivery_getUserURLs(t *testing.T) {
 
 	anyMock := gomock.Any()
 	userID := uuid.New().String()
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
 	for _, tt := range tests {
-		ctl := gomock.NewController(t)
-		defer ctl.Finish()
 		uc := usecasesMock.NewMockShortener(ctl)
 		urls := []url.URL{}
 		for _, item := range tt.fields.useCaseURLs {
@@ -597,9 +600,10 @@ func Test_delivery_BatchURL(t *testing.T) {
 
 	anyMock := gomock.Any()
 	userID := uuid.New().String()
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
 	for _, tt := range tests {
-		ctl := gomock.NewController(t)
-		defer ctl.Finish()
 		uc := usecasesMock.NewMockShortener(ctl)
 		urls := []url.URL{}
 		for _, item := range tt.fields.useCaseURLs {
@@ -675,10 +679,10 @@ func Test_delivery_Ping(t *testing.T) {
 
 	anyMock := gomock.Any()
 	userID := uuid.New().String()
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
 
 	for _, tt := range tests {
-		ctl := gomock.NewController(t)
-		defer ctl.Finish()
 		uc := usecasesMock.NewMockShortener(ctl)
 		uc.EXPECT().StorageCheck(anyMock).Return(tt.fields.useCaseErr).AnyTimes()
 		d := New(uc)

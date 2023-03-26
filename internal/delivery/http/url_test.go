@@ -24,26 +24,30 @@ func Test_delivery_addURL(t *testing.T) {
 		response string
 		headers  map[string]string
 	}
-
 	type args struct {
-		uri             string
-		method          string
-		body            string
+		uri    string
+		method string
+		body   string
+	}
+	type fields struct {
 		useCaseShortURL string
 		useCaseErr      error
 	}
 
 	tests := []struct {
-		name string
-		args args
-		want want
+		name   string
+		args   args
+		fields fields
+		want   want
 	}{
 		{
 			name: "positive add url",
 			args: args{
-				uri:             "/",
-				method:          http.MethodPost,
-				body:            `https://ya.ru`,
+				uri:    "/",
+				method: http.MethodPost,
+				body:   `https://ya.ru`,
+			},
+			fields: fields{
 				useCaseShortURL: "http://localhost:8080/2ZrI5IHFnvPscPYKlxFtRQ",
 			},
 			want: want{
@@ -58,9 +62,11 @@ func Test_delivery_addURL(t *testing.T) {
 		{
 			name: "negative add url (invalid body)",
 			args: args{
-				uri:        "/",
-				method:     http.MethodPost,
-				body:       `invalid`,
+				uri:    "/",
+				method: http.MethodPost,
+				body:   `invalid`,
+			},
+			fields: fields{
 				useCaseErr: shortener.ErrParseURL,
 			},
 			want: want{
@@ -88,9 +94,11 @@ func Test_delivery_addURL(t *testing.T) {
 		{
 			name: "negative add url (exist url)",
 			args: args{
-				uri:             "/",
-				method:          http.MethodPost,
-				body:            `https://ya.ru`,
+				uri:    "/",
+				method: http.MethodPost,
+				body:   `https://ya.ru`,
+			},
+			fields: fields{
 				useCaseShortURL: "http://localhost:8080/2ZrI5IHFnvPscPYKlxFtRQ",
 				useCaseErr:      url.ErrAlreadyExist,
 			},
@@ -111,8 +119,8 @@ func Test_delivery_addURL(t *testing.T) {
 		defer ctl.Finish()
 		uc := usecasesMock.NewMockShortener(ctl)
 		url := urlMock.NewMockURL(ctl)
-		url.EXPECT().ShortURL().Return(tt.args.useCaseShortURL).AnyTimes()
-		uc.EXPECT().CreateURL(anyMock, anyMock, anyMock).Return(url, tt.args.useCaseErr).AnyTimes()
+		url.EXPECT().ShortURL().Return(tt.fields.useCaseShortURL).AnyTimes()
+		uc.EXPECT().CreateURL(anyMock, anyMock, anyMock).Return(url, tt.fields.useCaseErr).AnyTimes()
 		d := New(uc)
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.args.method, tt.args.uri, strings.NewReader(tt.args.body))
@@ -138,24 +146,27 @@ func Test_delivery_getURL(t *testing.T) {
 		code    int
 		headers map[string]string
 	}
-
 	type args struct {
-		uri            string
-		method         string
+		uri    string
+		method string
+	}
+	type fields struct {
 		useCaseLongURL string
 		useCaseErr     error
 	}
-
 	tests := []struct {
-		name string
-		args args
-		want want
+		name   string
+		args   args
+		fields fields
+		want   want
 	}{
 		{
 			name: "positive get url",
 			args: args{
-				uri:            "/2ZrI5IHFnvPscPYKlxFtRQ",
-				method:         http.MethodGet,
+				uri:    "/2ZrI5IHFnvPscPYKlxFtRQ",
+				method: http.MethodGet,
+			},
+			fields: fields{
 				useCaseLongURL: "https://ya.ru",
 			},
 			want: want{
@@ -181,8 +192,10 @@ func Test_delivery_getURL(t *testing.T) {
 		{
 			name: "negative get url (invalid id)",
 			args: args{
-				uri:        "/2ZrI5IHFnvPscPYKlxFtRQ2",
-				method:     http.MethodGet,
+				uri:    "/2ZrI5IHFnvPscPYKlxFtRQ2",
+				method: http.MethodGet,
+			},
+			fields: fields{
 				useCaseErr: shortener.ErrParseUUID,
 			},
 			want: want{
@@ -193,8 +206,10 @@ func Test_delivery_getURL(t *testing.T) {
 		{
 			name: "negative get url (not found)",
 			args: args{
-				uri:        "/2ZrI5IHFnvPscPYKlxFtRQ",
-				method:     http.MethodGet,
+				uri:    "/2ZrI5IHFnvPscPYKlxFtRQ",
+				method: http.MethodGet,
+			},
+			fields: fields{
 				useCaseErr: url.ErrNotFound,
 			},
 			want: want{
@@ -211,8 +226,8 @@ func Test_delivery_getURL(t *testing.T) {
 		defer ctl.Finish()
 		uc := usecasesMock.NewMockShortener(ctl)
 		url := urlMock.NewMockURL(ctl)
-		url.EXPECT().LongURL().Return(tt.args.useCaseLongURL).AnyTimes()
-		uc.EXPECT().GetURL(anyMock, anyMock).Return(url, tt.args.useCaseErr).AnyTimes()
+		url.EXPECT().LongURL().Return(tt.fields.useCaseLongURL).AnyTimes()
+		uc.EXPECT().GetURL(anyMock, anyMock).Return(url, tt.fields.useCaseErr).AnyTimes()
 		d := New(uc)
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.args.method, tt.args.uri, nil)
@@ -236,26 +251,30 @@ func Test_delivery_shortURL(t *testing.T) {
 		response string
 		headers  map[string]string
 	}
-
 	type args struct {
-		uri             string
-		method          string
-		body            string
+		uri    string
+		method string
+		body   string
+	}
+	type fields struct {
 		useCaseShortURL string
 		useCaseErr      error
 	}
 
 	tests := []struct {
-		name string
-		args args
-		want want
+		name   string
+		args   args
+		fields fields
+		want   want
 	}{
 		{
 			name: "positive add url",
 			args: args{
-				uri:             "/api/shorten",
-				method:          http.MethodPost,
-				body:            `{"url":"https://ya.ru"}`,
+				uri:    "/api/shorten",
+				method: http.MethodPost,
+				body:   `{"url":"https://ya.ru"}`,
+			},
+			fields: fields{
 				useCaseShortURL: "http://localhost:8080/2ZrI5IHFnvPscPYKlxFtRQ",
 			},
 			want: want{
@@ -270,9 +289,11 @@ func Test_delivery_shortURL(t *testing.T) {
 		{
 			name: "negative add url (invalid url)",
 			args: args{
-				uri:        "/api/shorten",
-				method:     http.MethodPost,
-				body:       `{"url":"invalid"}`,
+				uri:    "/api/shorten",
+				method: http.MethodPost,
+				body:   `{"url":"invalid"}`,
+			},
+			fields: fields{
 				useCaseErr: shortener.ErrDecodeURL,
 			},
 			want: want{
@@ -301,9 +322,11 @@ func Test_delivery_shortURL(t *testing.T) {
 		{
 			name: "negative add url (exist url)",
 			args: args{
-				uri:             "/api/shorten",
-				method:          http.MethodPost,
-				body:            `{"url":"https://ya.ru"}`,
+				uri:    "/api/shorten",
+				method: http.MethodPost,
+				body:   `{"url":"https://ya.ru"}`,
+			},
+			fields: fields{
 				useCaseShortURL: "http://localhost:8080/2ZrI5IHFnvPscPYKlxFtRQ",
 				useCaseErr:      url.ErrAlreadyExist,
 			},
@@ -324,8 +347,8 @@ func Test_delivery_shortURL(t *testing.T) {
 		defer ctl.Finish()
 		uc := usecasesMock.NewMockShortener(ctl)
 		url := urlMock.NewMockURL(ctl)
-		url.EXPECT().ShortURL().Return(tt.args.useCaseShortURL).AnyTimes()
-		uc.EXPECT().CreateURL(anyMock, anyMock, anyMock).Return(url, tt.args.useCaseErr).AnyTimes()
+		url.EXPECT().ShortURL().Return(tt.fields.useCaseShortURL).AnyTimes()
+		uc.EXPECT().CreateURL(anyMock, anyMock, anyMock).Return(url, tt.fields.useCaseErr).AnyTimes()
 		d := New(uc)
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.args.method, tt.args.uri, strings.NewReader(tt.args.body))
@@ -352,10 +375,11 @@ func Test_delivery_getUserURLs(t *testing.T) {
 		response string
 		headers  map[string]string
 	}
-
 	type args struct {
-		uri         string
-		method      string
+		uri    string
+		method string
+	}
+	type fields struct {
 		useCaseURLs []struct {
 			shortURL string
 			longURL  string
@@ -364,15 +388,18 @@ func Test_delivery_getUserURLs(t *testing.T) {
 	}
 
 	tests := []struct {
-		name string
-		args args
-		want want
+		name   string
+		args   args
+		fields fields
+		want   want
 	}{
 		{
 			name: "positive get user urls",
 			args: args{
 				uri:    "/api/user/urls",
 				method: http.MethodGet,
+			},
+			fields: fields{
 				useCaseURLs: []struct {
 					shortURL string
 					longURL  string
@@ -383,7 +410,6 @@ func Test_delivery_getUserURLs(t *testing.T) {
 					},
 				},
 			},
-
 			want: want{
 				code:     http.StatusOK,
 				response: `[{"short_url":"http://localhost:8080/2ShKzidROaM6mhK2RP7chv","original_url":"https://ya.ru"}]`,
@@ -399,7 +425,6 @@ func Test_delivery_getUserURLs(t *testing.T) {
 				uri:    "/api/user/urls",
 				method: http.MethodGet,
 			},
-
 			want: want{
 				code: http.StatusNoContent,
 				headers: map[string]string{
@@ -411,11 +436,12 @@ func Test_delivery_getUserURLs(t *testing.T) {
 		{
 			name: "negative get user urls (invalid userID)",
 			args: args{
-				uri:        "/api/user/urls",
-				method:     http.MethodGet,
+				uri:    "/api/user/urls",
+				method: http.MethodGet,
+			},
+			fields: fields{
 				useCaseErr: shortener.ErrParseUUID,
 			},
-
 			want: want{
 				code: http.StatusBadRequest,
 				headers: map[string]string{
@@ -432,13 +458,13 @@ func Test_delivery_getUserURLs(t *testing.T) {
 		defer ctl.Finish()
 		uc := usecasesMock.NewMockShortener(ctl)
 		urls := []url.URL{}
-		for _, item := range tt.args.useCaseURLs {
+		for _, item := range tt.fields.useCaseURLs {
 			entity := urlMock.NewMockURL(ctl)
 			entity.EXPECT().ShortURL().Return(item.shortURL).AnyTimes()
 			entity.EXPECT().LongURL().Return(item.longURL).AnyTimes()
 			urls = append(urls, entity)
 		}
-		uc.EXPECT().GetUserURLs(anyMock, anyMock).Return(urls, tt.args.useCaseErr).AnyTimes()
+		uc.EXPECT().GetUserURLs(anyMock, anyMock).Return(urls, tt.fields.useCaseErr).AnyTimes()
 		d := New(uc)
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.args.method, tt.args.uri, nil)
@@ -465,11 +491,12 @@ func Test_delivery_BatchURL(t *testing.T) {
 		response string
 		headers  map[string]string
 	}
-
 	type args struct {
-		uri         string
-		method      string
-		body        string
+		uri    string
+		method string
+		body   string
+	}
+	type fields struct {
 		useCaseURLs []struct {
 			shortURL      string
 			correlationID string
@@ -478,9 +505,10 @@ func Test_delivery_BatchURL(t *testing.T) {
 	}
 
 	tests := []struct {
-		name string
-		args args
-		want want
+		name   string
+		args   args
+		fields fields
+		want   want
 	}{
 		{
 			name: "positive add batch url",
@@ -488,6 +516,8 @@ func Test_delivery_BatchURL(t *testing.T) {
 				uri:    "/api/shorten/batch",
 				method: http.MethodPost,
 				body:   `[{"correlation_id":"1","original_url":"https://ya.ru"}]`,
+			},
+			fields: fields{
 				useCaseURLs: []struct {
 					shortURL      string
 					correlationID string
@@ -498,7 +528,6 @@ func Test_delivery_BatchURL(t *testing.T) {
 					},
 				},
 			},
-
 			want: want{
 				code:     http.StatusCreated,
 				response: `[{"correlation_id":"1","short_url":"http://localhost:8080/2ShKzidROaM6mhK2RP7chv"}]`,
@@ -515,7 +544,6 @@ func Test_delivery_BatchURL(t *testing.T) {
 				method: http.MethodPost,
 				body:   `[{"correlation_id":"1","original_url":"https://ya.ru"},{"correlation_id":"2"}]`,
 			},
-
 			want: want{
 				code: http.StatusBadRequest,
 				headers: map[string]string{
@@ -531,7 +559,6 @@ func Test_delivery_BatchURL(t *testing.T) {
 				method: http.MethodPost,
 				body:   `invalid`,
 			},
-
 			want: want{
 				code: http.StatusBadRequest,
 				headers: map[string]string{
@@ -546,6 +573,8 @@ func Test_delivery_BatchURL(t *testing.T) {
 				uri:    "/api/shorten/batch",
 				method: http.MethodPost,
 				body:   `[{"correlation_id":"1","original_url":"https://ya.ru"}]`,
+			},
+			fields: fields{
 				useCaseURLs: []struct {
 					shortURL      string
 					correlationID string
@@ -557,7 +586,6 @@ func Test_delivery_BatchURL(t *testing.T) {
 				},
 				useCaseErr: url.ErrAlreadyExist,
 			},
-
 			want: want{
 				code: http.StatusConflict,
 				headers: map[string]string{
@@ -574,13 +602,13 @@ func Test_delivery_BatchURL(t *testing.T) {
 		defer ctl.Finish()
 		uc := usecasesMock.NewMockShortener(ctl)
 		urls := []url.URL{}
-		for _, item := range tt.args.useCaseURLs {
+		for _, item := range tt.fields.useCaseURLs {
 			entity := urlMock.NewMockURL(ctl)
 			entity.EXPECT().ShortURL().Return(item.shortURL).AnyTimes()
 			entity.EXPECT().CorrelationID().Return(item.correlationID).AnyTimes()
 			urls = append(urls, entity)
 		}
-		uc.EXPECT().BatchURL(anyMock, anyMock, anyMock, anyMock).Return(urls, tt.args.useCaseErr).AnyTimes()
+		uc.EXPECT().BatchURL(anyMock, anyMock, anyMock, anyMock).Return(urls, tt.fields.useCaseErr).AnyTimes()
 		d := New(uc)
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.args.method, tt.args.uri, strings.NewReader(tt.args.body))
@@ -605,17 +633,19 @@ func Test_delivery_Ping(t *testing.T) {
 	type want struct {
 		code int
 	}
-
 	type args struct {
-		uri        string
-		method     string
+		uri    string
+		method string
+	}
+	type fields struct {
 		useCaseErr error
 	}
 
 	tests := []struct {
-		name string
-		args args
-		want want
+		name   string
+		args   args
+		fields fields
+		want   want
 	}{
 		{
 			name: "positive ping",
@@ -631,8 +661,10 @@ func Test_delivery_Ping(t *testing.T) {
 		{
 			name: "negative url",
 			args: args{
-				uri:        "/ping",
-				method:     http.MethodGet,
+				uri:    "/ping",
+				method: http.MethodGet,
+			},
+			fields: fields{
 				useCaseErr: ErrStorageCheck,
 			},
 			want: want{
@@ -648,7 +680,7 @@ func Test_delivery_Ping(t *testing.T) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		uc := usecasesMock.NewMockShortener(ctl)
-		uc.EXPECT().StorageCheck(anyMock).Return(tt.args.useCaseErr).AnyTimes()
+		uc.EXPECT().StorageCheck(anyMock).Return(tt.fields.useCaseErr).AnyTimes()
 		d := New(uc)
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.args.method, tt.args.uri, nil)

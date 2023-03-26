@@ -155,6 +155,8 @@ func (d *delivery) getUserURLs(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		d.logger.Error("failed get user urls", err,
 			slog.String("userID", userID), slog.String("handler", "getUserURLs"))
+		handelErrURL(w, err)
+		return
 	}
 
 	if len(urls) == 0 {
@@ -175,6 +177,7 @@ func (d *delivery) getUserURLs(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		d.logger.Error("failed marshal response url", err, slog.String("handler", "getUserURLs"))
 		handelErrURL(w, err)
+		return
 	}
 	_, err = w.Write(data)
 	if err != nil {

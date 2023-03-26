@@ -76,6 +76,7 @@ func (uc *useCase) GetURL(ctx context.Context, urlID string) (entity.URL, error)
 	id, err := uuid.FromBytes(decoded)
 	if err != nil {
 		uc.logger.Error("failed create uuid from url id", err, slog.String("urlID", urlID))
+		return nil, err
 	}
 
 	u, err := uc.storage.Get(ctx, id)
@@ -104,6 +105,7 @@ func (uc *useCase) GetUserURLs(ctx context.Context, userID string) ([]entity.URL
 	urls, err := uc.storage.GetByUserID(ctx, parsedUserID)
 	if err != nil {
 		uc.logger.Error("failed get url for user id", err, slog.String("userID", userID))
+		return nil, err
 	}
 
 	for idx, i := range urls {

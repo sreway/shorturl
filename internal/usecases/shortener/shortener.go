@@ -61,6 +61,7 @@ func (uc *useCase) CreateURL(ctx context.Context, rawURL string, userID string) 
 			addURL.SetShortURL(shortURL)
 			return addURL, err
 		}
+		return nil, err
 	}
 
 	return addURL, nil

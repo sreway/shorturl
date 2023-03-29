@@ -5,20 +5,23 @@ import (
 	"math/big"
 )
 
-func uintEncode(number uint64) string {
-	return big.NewInt(int64(number)).Text(62)
+func encodeUUID(uuid [16]byte) string {
+	var i big.Int
+	i.SetBytes(uuid[:])
+	return i.Text(62)
 }
 
-func uintDecode(s string) (uint64, error) {
-	n := new(big.Int)
-	_, ok := n.SetString(s, 62)
+func decodeUUID(s string) ([]byte, error) {
+	var i big.Int
+	_, ok := i.SetString(s, 62)
 	if !ok {
-		return 0, fmt.Errorf("failed decode string %s", s)
+		return nil, fmt.Errorf("cannot parse base62: %q", s)
 	}
+	var uuid []byte
+	copy(uuid, i.Bytes())
 
-	if !n.IsUint64() {
-		return 0, fmt.Errorf("%s is not uint64 encoded", s)
+	if len(i.Bytes()) < 16 {
+		return nil, fmt.Errorf("invalid UUID length: %d", len(i.Bytes()))
 	}
-
-	return n.Uint64(), nil
+	return i.Bytes(), nil
 }

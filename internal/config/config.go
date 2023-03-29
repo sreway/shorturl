@@ -18,11 +18,21 @@ type (
 		GetAddress() string
 		GetCompressTypes() []string
 		GetCompressLevel() int
+		GetCookie() *cookie
 	}
 
 	ShortURL interface {
 		GetBaseURL() *url.URL
-		GetCounter() uint64
+	}
+
+	Storage interface {
+		GetPostgres() *postgres
+		GetCache() *cache
+	}
+
+	Postgres interface {
+		GetDSN() string
+		GetMigrateURL() string
 	}
 
 	Cache interface {
@@ -40,19 +50,31 @@ type (
 		Address       string   `env:"SERVER_ADDRESS" envDefault:"127.0.0.1:8080"`
 		CompressTypes []string `env:"HTTP_COMPRESS_TYPES" envDefault:"text/plain,application/json" envSeparator:","`
 		CompressLevel int      `env:"HTTP_COMPRESS_LEVEL" envDefault:"5"`
+		cookie        *cookie
+		SecretKey     string `env:"HTTP_SECRET_KEY" envDefault:"secret"`
+	}
+
+	cookie struct {
+		SignID    string `env:"COOKIE_SIGN_ID" envDefault:"user_id"`
+		SecretKey string `env:"COOKIE_SECRET_KEY" envDefault:"secret_key"`
 	}
 
 	shortURL struct {
 		BaseURL *url.URL `env:"BASE_URL" envDefault:"http://127.0.0.1:8080"`
-		Counter uint64   `env:"COUNTER" envDefault:"1000000000"`
 	}
 
 	storage struct {
-		cache *cache
+		cache    *cache
+		postgres *postgres
 	}
 
 	cache struct {
 		FilePath string `env:"FILE_STORAGE_PATH" envDefault:"./storage.json"`
+	}
+
+	postgres struct {
+		DSN        string `env:"DATABASE_DSN"`
+		MigrateURL string `env:"MIGRATE_URL" envDefault:"file://migrations/postgres"`
 	}
 )
 
@@ -80,6 +102,10 @@ func (h *http) GetCompressTypes() []string {
 	return h.CompressTypes
 }
 
+func (h *http) GetCookie() *cookie {
+	return h.cookie
+}
+
 func (h *http) GetCompressLevel() int {
 	return h.CompressLevel
 }
@@ -88,24 +114,34 @@ func (s *shortURL) GetBaseURL() *url.URL {
 	return s.BaseURL
 }
 
-func (s *shortURL) GetCounter() uint64 {
-	return s.Counter
-}
-
 func (store *storage) Cache() *cache {
 	return store.cache
+}
+
+func (store *storage) Postgres() *postgres {
+	return store.postgres
 }
 
 func (c *cache) GetFilePath() string {
 	return c.FilePath
 }
 
+func (p *postgres) GetDSN() string {
+	return p.DSN
+}
+
+func (p *postgres) GetMigrateURL() string {
+	return p.MigrateURL
+}
+
 func NewConfig() (*config, error) {
 	cfg := new(config)
 	cfg.shortURL = new(shortURL)
 	cfg.http = new(http)
+	cfg.http.cookie = new(cookie)
 	cfg.storage = new(storage)
 	cfg.storage.cache = new(cache)
+	cfg.storage.postgres = new(postgres)
 
 	if err := env.Parse(cfg.http); err != nil {
 		return nil, err
@@ -118,12 +154,14 @@ func NewConfig() (*config, error) {
 	if err := env.Parse(cfg.storage.cache); err != nil {
 		return nil, err
 	}
-	return cfg, nil
-}
 
-func NewShortURLConfig(u *url.URL, counter uint64) *shortURL {
-	return &shortURL{
-		u,
-		counter,
+	if err := env.Parse(cfg.storage.postgres); err != nil {
+		return nil, err
 	}
+
+	if err := env.Parse(cfg.http.cookie); err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
 }

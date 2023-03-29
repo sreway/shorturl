@@ -3,9 +3,11 @@ package http
 import "errors"
 
 var (
-	ErrReadBody    = errors.New("read body error")
-	ErrEmptyBody   = errors.New("empty body")
-	ErrWriteBody   = errors.New("write body error")
-	ErrInvalidSlug = errors.New("invalid slug")
-	ErrDecodeBody  = errors.New("failed decode body")
+	ErrReadBody       = errors.New("read body error")
+	ErrEmptyBody      = errors.New("empty body")
+	ErrWriteBody      = errors.New("write body error")
+	ErrInvalidSlug    = errors.New("invalid slug")
+	ErrDecodeBody     = errors.New("failed decode body")
+	ErrInvalidRequest = errors.New("invalid url request")
+	ErrStorageCheck   = errors.New("failed storage check")
 )

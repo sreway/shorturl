@@ -5,42 +5,58 @@ import (
 	"net/url"
 	"os"
 	"sync"
-	"sync/atomic"
 
+	"github.com/google/uuid"
 	"golang.org/x/exp/slog"
+
+	entity "github.com/sreway/shorturl/internal/domain/url"
 )
 
 type repo struct {
-	data    map[uint64]*url.URL
-	counter uint64
+	data    map[uuid.UUID]storageURL
 	file    *os.File
 	fileUse bool
 	logger  *slog.Logger
 	mu      sync.RWMutex
 }
 
-func (r *repo) Add(ctx context.Context, longURL *url.URL) (uint64, error) {
+func (r *repo) Add(ctx context.Context, item entity.URL) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	_ = ctx
-	id := atomic.AddUint64(&r.counter, 1)
-	r.data[id] = longURL
-	return id, nil
+
+	r.data[item.ID()] = storageURL{
+		UserID: item.UserID(),
+		Value:  item.LongValue(),
+	}
+	return nil
 }
 
-func (r *repo) Get(ctx context.Context, id uint64) (*url.URL, error) {
+func (r *repo) Get(_ context.Context, id uuid.UUID) (entity.URL, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	_ = ctx
-
-	v, ok := r.data[id]
+	i, ok := r.data[id]
 	if !ok {
-		return nil, ErrNotFound
+		return nil, entity.ErrNotFound
+	}
+	return entity.NewURL(uuid.UUID{}, i.UserID, url.URL{}, i.Value), nil
+}
+
+func (r *repo) GetByUserID(_ context.Context, userID uuid.UUID) ([]entity.URL, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	result := []entity.URL{}
+
+	for k, v := range r.data {
+		if v.UserID == userID {
+			u := entity.NewURL(k, v.UserID, url.URL{}, v.Value)
+			result = append(result, u)
+		}
 	}
 
-	return v, nil
+	return result, nil
 }
 
 func (r *repo) Close() error {
@@ -57,12 +73,29 @@ func (r *repo) Close() error {
 	return nil
 }
 
+func (r *repo) Ping(_ context.Context) error {
+	return ErrInvalidStorageType
+}
+
+func (r *repo) Batch(_ context.Context, urls []entity.URL) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for _, item := range urls {
+		r.data[item.ID()] = storageURL{
+			UserID: item.UserID(),
+			Value:  item.LongValue(),
+		}
+	}
+	return nil
+}
+
 func New(opts ...Option) *repo {
 	log := slog.New(slog.NewJSONHandler(os.Stdout).
 		WithAttrs([]slog.Attr{slog.String("repository", "cache")}))
 
 	r := &repo{
-		data:   map[uint64]*url.URL{},
+		data:   map[uuid.UUID]storageURL{},
 		logger: log,
 	}
 

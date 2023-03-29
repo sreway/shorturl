@@ -12,36 +12,45 @@ import (
 	"github.com/sreway/shorturl/internal/config"
 	"github.com/sreway/shorturl/internal/delivery/http"
 	"github.com/sreway/shorturl/internal/repository/storage/cache"
+	"github.com/sreway/shorturl/internal/repository/storage/postgres"
 	"github.com/sreway/shorturl/internal/usecases/adapters/storage"
 	"github.com/sreway/shorturl/internal/usecases/shortener"
 )
 
 func init() {
 	var (
-		httpServerAddress string
-		shortenBaseURL    string
-		storageCachePath  string
+		httpServerAddress  string
+		shortenBaseURL     string
+		storageCachePath   string
+		storagePostgresDSN string
+		lookupEnv          = []string{
+			"BASE_URL", "SERVER_ADDRESS", "FILE_STORAGE_PATH", "DATABASE_DSN",
+		}
 	)
 
 	flag.StringVar(&httpServerAddress, "a", httpServerAddress,
 		"http server address: scheme:host:port")
 	flag.StringVar(&shortenBaseURL, "b", shortenBaseURL, "shorten base url")
 	flag.StringVar(&storageCachePath, "f", storageCachePath, "storage cache file path")
+	flag.StringVar(&storagePostgresDSN, "d", storagePostgresDSN, "storage postgres dsn")
 	flag.Parse()
 
-	_, exist := os.LookupEnv("BASE_URL")
-	if !exist {
-		_ = os.Setenv("BASE_URL", shortenBaseURL)
-	}
+	for _, env := range lookupEnv {
+		_, exist := os.LookupEnv(env)
+		if exist {
+			continue
+		}
 
-	_, exist = os.LookupEnv("SERVER_ADDRESS")
-	if !exist {
-		_ = os.Setenv("SERVER_ADDRESS", httpServerAddress)
-	}
-
-	_, exist = os.LookupEnv("FILE_STORAGE_PATH")
-	if !exist {
-		_ = os.Setenv("FILE_STORAGE_PATH", storageCachePath)
+		switch env {
+		case "BASE_URL":
+			_ = os.Setenv(env, shortenBaseURL)
+		case "SERVER_ADDRESS":
+			_ = os.Setenv(env, httpServerAddress)
+		case "FILE_STORAGE_PATH":
+			_ = os.Setenv(env, storageCachePath)
+		case "DATABASE_DSN":
+			_ = os.Setenv(env, storagePostgresDSN)
+		}
 	}
 }
 
@@ -71,6 +80,7 @@ func main() {
 		var (
 			cfg            config.Config
 			configCache    config.Cache
+			configPostgres config.Postgres
 			configShortURL config.ShortURL
 			repo           storage.URL
 		)
@@ -84,12 +94,26 @@ func main() {
 		}
 
 		configCache = cfg.Storage().Cache()
+		configPostgres = cfg.Storage().Postgres()
 		configShortURL = cfg.ShortURL()
 
-		repo = cache.New(
-			cache.Counter(configShortURL.GetCounter()),
-			cache.File(configCache.GetFilePath()),
-		)
+		switch {
+		case len(configPostgres.GetDSN()) > 0:
+			repo, err = postgres.New(ctx, configPostgres)
+			if err == nil {
+				log.Info("use postgres repository")
+				break
+			}
+			log.Error("failed initialize postgres repository", err)
+			fallthrough
+		case len(configCache.GetFilePath()) > 0:
+			repo = cache.New(cache.File(configCache.GetFilePath()))
+			log.Info("use cache repository with specific file")
+		default:
+			repo = cache.New()
+			log.Info("use default cache repository")
+		}
+
 		defer func() {
 			err = repo.Close()
 			if err != nil {
@@ -97,7 +121,7 @@ func main() {
 			}
 		}()
 
-		service := shortener.New(repo, cfg.ShortURL())
+		service := shortener.New(repo, configShortURL)
 		srv := http.New(service)
 
 		err = srv.Run(ctx, cfg.HTTP())

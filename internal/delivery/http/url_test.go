@@ -217,6 +217,20 @@ func Test_delivery_getURL(t *testing.T) {
 				code: http.StatusNotFound,
 			},
 		},
+
+		{
+			name: "negative get url (deleted)",
+			args: args{
+				uri:    "/2ZrI5IHFnvPscPYKlxFtRQ",
+				method: http.MethodGet,
+			},
+			fields: fields{
+				useCaseErr: url.ErrDeleted,
+			},
+			want: want{
+				code: http.StatusGone,
+			},
+		},
 	}
 
 	anyMock := gomock.Any()
@@ -488,7 +502,7 @@ func Test_delivery_getUserURLs(t *testing.T) {
 	}
 }
 
-func Test_delivery_BatchURL(t *testing.T) {
+func Test_delivery_batchURL(t *testing.T) {
 	type want struct {
 		code     int
 		response string
@@ -618,7 +632,7 @@ func Test_delivery_BatchURL(t *testing.T) {
 			request := httptest.NewRequest(tt.args.method, tt.args.uri, strings.NewReader(tt.args.body))
 			request = request.WithContext(context.WithValue(request.Context(), ctxKeyUserID{}, userID))
 			w := httptest.NewRecorder()
-			h := http.HandlerFunc(d.BatchURL)
+			h := http.HandlerFunc(d.batchURL)
 			h.ServeHTTP(w, request)
 			resp := w.Result()
 			defer resp.Body.Close()
@@ -633,7 +647,7 @@ func Test_delivery_BatchURL(t *testing.T) {
 	}
 }
 
-func Test_delivery_Ping(t *testing.T) {
+func Test_delivery_ping(t *testing.T) {
 	type want struct {
 		code int
 	}
@@ -690,7 +704,103 @@ func Test_delivery_Ping(t *testing.T) {
 			request := httptest.NewRequest(tt.args.method, tt.args.uri, nil)
 			request = request.WithContext(context.WithValue(request.Context(), ctxKeyUserID{}, userID))
 			w := httptest.NewRecorder()
-			h := http.HandlerFunc(d.Ping)
+			h := http.HandlerFunc(d.ping)
+			h.ServeHTTP(w, request)
+			resp := w.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, tt.want.code, resp.StatusCode)
+		})
+	}
+}
+
+func Test_delivery_deleteURL(t *testing.T) {
+	type want struct {
+		code int
+	}
+	type args struct {
+		uri    string
+		method string
+		body   string
+	}
+	type fields struct {
+		useCaseErr error
+	}
+
+	tests := []struct {
+		name   string
+		args   args
+		fields fields
+		want   want
+	}{
+		{
+			name: "positive delete url",
+			args: args{
+				uri:    "/api/user/urls",
+				method: http.MethodDelete,
+				body:   `["2ZrI5IHFnvPscPYKlxFtRQ"]`,
+			},
+			want: want{
+				code: http.StatusAccepted,
+			},
+		},
+
+		{
+			name: "negative delete url (invalid body)",
+			args: args{
+				uri:    "/api/user/urls",
+				method: http.MethodDelete,
+				body:   `invalid`,
+			},
+			want: want{
+				code: http.StatusBadRequest,
+			},
+		},
+
+		{
+			name: "negative delete url (invalid user uuid)",
+			args: args{
+				uri:    "/api/user/urls",
+				method: http.MethodDelete,
+				body:   `invalid`,
+			},
+			fields: fields{
+				useCaseErr: shortener.ErrParseUUID,
+			},
+			want: want{
+				code: http.StatusBadRequest,
+			},
+		},
+
+		{
+			name: "negative delete url (invalid url id)",
+			args: args{
+				uri:    "/api/user/urls",
+				method: http.MethodDelete,
+				body:   `["2ZrI5IHFnvPscPYKlxFtRQ", "invalid"]`,
+			},
+			fields: fields{
+				useCaseErr: shortener.ErrDecodeURL,
+			},
+			want: want{
+				code: http.StatusBadRequest,
+			},
+		},
+	}
+
+	anyMock := gomock.Any()
+	userID := uuid.New().String()
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	for _, tt := range tests {
+		uc := usecasesMock.NewMockShortener(ctl)
+		uc.EXPECT().DeleteURL(anyMock, anyMock, anyMock).Return(tt.fields.useCaseErr).AnyTimes()
+		d := New(uc)
+		t.Run(tt.name, func(t *testing.T) {
+			request := httptest.NewRequest(tt.args.method, tt.args.uri, strings.NewReader(tt.args.body))
+			request = request.WithContext(context.WithValue(request.Context(), ctxKeyUserID{}, userID))
+			w := httptest.NewRecorder()
+			h := http.HandlerFunc(d.deleteURL)
 			h.ServeHTTP(w, request)
 			resp := w.Result()
 			defer resp.Body.Close()

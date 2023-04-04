@@ -14,11 +14,14 @@ import (
 	"github.com/sreway/shorturl/internal/usecases/adapters/storage"
 )
 
-type useCase struct {
-	baseURL *url.URL
-	storage storage.URL
-	logger  *slog.Logger
-}
+type (
+	useCase struct {
+		baseURL   *url.URL
+		storage   storage.URL
+		logger    *slog.Logger
+		taskQueue chan task
+	}
+)
 
 func (uc *useCase) CreateURL(ctx context.Context, rawURL string, userID string) (entity.URL, error) {
 	longURL, err := url.ParseRequestURI(rawURL)
@@ -42,7 +45,10 @@ func (uc *useCase) CreateURL(ctx context.Context, rawURL string, userID string) 
 
 	shortURL.Path = encodeUUID(id)
 
-	addURL := entity.NewURL(id, parsedUserID, shortURL, *longURL)
+	addURL := entity.NewURL(id, parsedUserID)
+	addURL.SetShortURL(shortURL)
+	addURL.SetLongURL(*longURL)
+
 	err = uc.storage.Add(ctx, addURL)
 	if err != nil && !errors.Is(err, entity.ErrAlreadyExist) {
 		uc.logger.Error("store url", err, slog.String("id", id.String()),
@@ -85,6 +91,11 @@ func (uc *useCase) GetURL(ctx context.Context, urlID string) (entity.URL, error)
 		uc.logger.Error("failed get url", err, slog.String("urlID", urlID))
 		return nil, err
 	}
+
+	if u.Deleted() {
+		return nil, entity.ErrDeleted
+	}
+
 	shortURL := url.URL{
 		Scheme: uc.baseURL.Scheme,
 		Host:   uc.baseURL.Host,
@@ -149,7 +160,9 @@ func (uc *useCase) BatchURL(ctx context.Context, correlationID, rawURL []string,
 		id := uuid.New()
 		shortURL.Path = encodeUUID(id)
 
-		u := entity.NewURL(id, parsedUserID, shortURL, *longURL)
+		u := entity.NewURL(id, parsedUserID)
+		u.SetShortURL(shortURL)
+		u.SetLongURL(*longURL)
 		u.SetCorrelationID(correlationID[idx])
 		urls = append(urls, u)
 	}
@@ -162,12 +175,49 @@ func (uc *useCase) BatchURL(ctx context.Context, correlationID, rawURL []string,
 	return urls, nil
 }
 
+func (uc *useCase) DeleteURL(_ context.Context, userID string, urlID []string) error {
+	urls := []entity.URL{}
+	parsedUserID, err := uuid.ParseBytes([]byte(userID))
+	if err != nil {
+		uc.logger.Error("failed parse RFC 4122 uuid from user id", err, slog.String("userID", userID))
+		return ErrParseUUID
+	}
+
+	for _, i := range urlID {
+		decoded, err := decodeUUID(i)
+		if err != nil {
+			uc.logger.Error("decode short url", err)
+			return ErrDecodeURL
+		}
+
+		id, err := uuid.FromBytes(decoded)
+		if err != nil {
+			uc.logger.Error("failed create uuid from url id", err, slog.String("urlID", i))
+			return ErrParseUUID
+		}
+
+		u := entity.NewURL(id, parsedUserID)
+		u.SetDeleted(true)
+		urls = append(urls, u)
+	}
+
+	if len(uc.taskQueue) == cap(uc.taskQueue) {
+		return ErrTaskBufferFull
+	}
+
+	uc.taskQueue <- *NewTask(deleteAction, urls)
+
+	return nil
+}
+
 func New(s storage.URL, cfg config.ShortURL) *useCase {
 	log := slog.New(slog.NewJSONHandler(os.Stdout).
 		WithAttrs([]slog.Attr{slog.String("service", "shortener")}))
+	taskQueue := make(chan task, cfg.GetMaxTaskQueue())
 	return &useCase{
-		baseURL: cfg.GetBaseURL(),
-		storage: s,
-		logger:  log,
+		baseURL:   cfg.GetBaseURL(),
+		storage:   s,
+		logger:    log,
+		taskQueue: taskQueue,
 	}
 }

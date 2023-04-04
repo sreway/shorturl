@@ -12,5 +12,6 @@ type Shortener interface {
 	BatchURL(ctx context.Context, correlationID, rawURL []string, userID string) ([]url.URL, error)
 	GetURL(ctx context.Context, urlID string) (url.URL, error)
 	GetUserURLs(ctx context.Context, userID string) ([]url.URL, error)
+	DeleteURL(ctx context.Context, userID string, urlID []string) error
 	StorageCheck(ctx context.Context) error
 }

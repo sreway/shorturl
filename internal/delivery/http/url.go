@@ -187,7 +187,7 @@ func (d *delivery) getUserURLs(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (d *delivery) BatchURL(w http.ResponseWriter, r *http.Request) {
+func (d *delivery) batchURL(w http.ResponseWriter, r *http.Request) {
 	type (
 		reqURL struct {
 			CorrelationID string `json:"correlation_id"`
@@ -205,7 +205,7 @@ func (d *delivery) BatchURL(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(ctxKeyUserID{}).(string)
 	if !ok {
 		d.logger.Error("invalid user id", ErrInvalidRequest,
-			slog.String("userID", userID), slog.String("handler", "BatchURL"))
+			slog.String("userID", userID), slog.String("handler", "batchURL"))
 		handelErrURL(w, ErrInvalidRequest)
 		return
 	}
@@ -214,7 +214,7 @@ func (d *delivery) BatchURL(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 
 	if err := decoder.Decode(&req); err != nil {
-		d.logger.Error("failed decode request url", err, slog.String("handler", "BatchURL"))
+		d.logger.Error("failed decode request url", err, slog.String("handler", "batchURL"))
 		handelErrURL(w, ErrDecodeBody)
 		return
 	}
@@ -241,7 +241,7 @@ func (d *delivery) BatchURL(w http.ResponseWriter, r *http.Request) {
 
 	urls, err := d.shortener.BatchURL(r.Context(), correlationID, rawURL, userID)
 	if err != nil {
-		d.logger.Error("failed batch add urls", err, slog.String("handler", "BatchURL"))
+		d.logger.Error("failed batch add urls", err, slog.String("handler", "batchURL"))
 		handelErrURL(w, err)
 		return
 	}
@@ -256,7 +256,7 @@ func (d *delivery) BatchURL(w http.ResponseWriter, r *http.Request) {
 
 	data, err := json.Marshal(resp)
 	if err != nil {
-		d.logger.Error("failed marshal response url", err, slog.String("handler", "BatchURL"))
+		d.logger.Error("failed marshal response url", err, slog.String("handler", "batchURL"))
 		handelErrURL(w, err)
 		return
 	}
@@ -264,16 +264,46 @@ func (d *delivery) BatchURL(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	_, err = w.Write(data)
 	if err != nil {
-		d.logger.Error("write body", err, slog.String("handler", "BatchURL"))
+		d.logger.Error("write body", err, slog.String("handler", "batchURL"))
 		handelErrURL(w, ErrWriteBody)
 		return
 	}
 }
 
-func (d *delivery) Ping(w http.ResponseWriter, r *http.Request) {
+func (d *delivery) deleteURL(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userID, ok := r.Context().Value(ctxKeyUserID{}).(string)
+	if !ok {
+		d.logger.Error("invalid user id", ErrInvalidRequest,
+			slog.String("userID", userID), slog.String("handler", "deleteBatchURL"))
+		handelErrURL(w, ErrInvalidRequest)
+		return
+	}
+
+	urls := new([]string)
+	decoder := json.NewDecoder(r.Body)
+
+	if err := decoder.Decode(&urls); err != nil {
+		d.logger.Error("failed decode request", err, slog.String("handler", "deleteURL"))
+		handelErrURL(w, ErrDecodeBody)
+		return
+	}
+
+	err := d.shortener.DeleteURL(r.Context(), userID, *urls)
+	if err != nil {
+		d.logger.Error("failed delete urls", err, slog.String("handler", "deleteURL"))
+		handelErrURL(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusAccepted)
+}
+
+func (d *delivery) ping(w http.ResponseWriter, r *http.Request) {
 	err := d.shortener.StorageCheck(r.Context())
 	if err != nil {
-		d.logger.Error("failed check storage", err, slog.String("handler", "Ping"))
+		d.logger.Error("failed check storage", err, slog.String("handler", "ping"))
 		handelErrURL(w, ErrStorageCheck)
 		return
 	}
@@ -306,6 +336,8 @@ func handelErrURL(w http.ResponseWriter, err error) {
 		w.WriteHeader(http.StatusConflict)
 	case errors.Is(err, ErrStorageCheck):
 		w.WriteHeader(http.StatusInternalServerError)
+	case errors.Is(err, entity.ErrDeleted):
+		w.WriteHeader(http.StatusGone)
 	default:
 		w.WriteHeader(http.StatusNotImplemented)
 	}

@@ -99,7 +99,8 @@ func Test_useCase_CreateURL(t *testing.T) {
 
 func Test_useCase_GetURL(t *testing.T) {
 	type args struct {
-		urlID string
+		urlID   string
+		deleted bool
 	}
 	type fields struct {
 		repoErr error
@@ -148,6 +149,7 @@ func Test_useCase_GetURL(t *testing.T) {
 		repo := repoMock.NewMockURL(ctl)
 		uc := New(repo, cfg.ShortURL())
 		mockURL := urlMock.NewMockURL(ctl)
+		mockURL.EXPECT().Deleted().Return(tt.args.deleted).AnyTimes()
 		mockURL.EXPECT().SetShortURL(anyMock).AnyTimes()
 		repo.EXPECT().Get(anyMock, anyMock).Return(mockURL, tt.fields.repoErr).AnyTimes()
 		t.Run(tt.name, func(t *testing.T) {
@@ -359,6 +361,61 @@ func Test_useCase_BatchURL(t *testing.T) {
 				assert.NotEmpty(t, item.ID().String())
 				assert.NotEmpty(t, item.UserID().String())
 				assert.NotEmpty(t, item.CorrelationID())
+			}
+		})
+	}
+}
+
+func Test_useCase_DeleteURL(t *testing.T) {
+	type args struct {
+		userID string
+		urlID  []string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{
+			name: "positive delete url",
+			args: args{
+				userID: "035f67d8-626b-48f2-b436-8509954fc452",
+				urlID:  []string{"5nPymsbLZfXlsUDlZ4MIhY"},
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "negative delete url (invalid user uuid)",
+			args: args{
+				userID: "invalid",
+			},
+			wantErr: assert.Error,
+		},
+		{
+			name: "negative delete url (invalid url id)",
+			args: args{
+				userID: "035f67d8-626b-48f2-b436-8509954fc452",
+				urlID:  []string{"5nPymsbLZfXlsUDlZ4MIhY", "invalid"},
+			},
+			wantErr: assert.Error,
+		},
+	}
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	ctx := context.Background()
+	for _, tt := range tests {
+		cfg, err := config.NewConfig()
+		assert.NoError(t, err)
+		repo := repoMock.NewMockURL(ctl)
+		uc := New(repo, cfg.ShortURL())
+		t.Run(tt.name, func(t *testing.T) {
+			err = uc.DeleteURL(ctx, tt.args.userID, tt.args.urlID)
+			if !tt.wantErr(t, err, fmt.Sprintf("DeleteURL(%v)", tt.args.urlID)) {
+				return
+			}
+			if err != nil {
+				return
 			}
 		})
 	}

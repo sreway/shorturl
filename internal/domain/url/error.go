@@ -10,6 +10,7 @@ import (
 var (
 	ErrNotFound     = errors.New("URL not found")
 	ErrAlreadyExist = errors.New("URL already exist")
+	ErrDeleted      = errors.New("URL deleted")
 )
 
 type (

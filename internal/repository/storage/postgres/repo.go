@@ -83,11 +83,12 @@ func (r *repo) Add(ctx context.Context, item entity.URL) error {
 
 func (r *repo) Get(ctx context.Context, id uuid.UUID) (entity.URL, error) {
 	var (
-		userID uuid.UUID
-		rawURL string
+		userID  uuid.UUID
+		rawURL  string
+		deleted bool
 	)
-	query := "SELECT user_id, original_url FROM urls WHERE id = $1"
-	err := r.pool.QueryRow(ctx, query, id).Scan(&userID, &rawURL)
+	query := "SELECT user_id, original_url, deleted FROM urls WHERE id = $1"
+	err := r.pool.QueryRow(ctx, query, id).Scan(&userID, &rawURL, &deleted)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, entity.NewURLErr(id, uuid.UUID{}, entity.ErrNotFound)
@@ -102,7 +103,10 @@ func (r *repo) Get(ctx context.Context, id uuid.UUID) (entity.URL, error) {
 		return nil, err
 	}
 
-	return entity.NewURL(id, userID, url.URL{}, *value), nil
+	u := entity.NewURL(id, userID)
+	u.SetLongURL(*value)
+	u.SetDeleted(deleted)
+	return u, nil
 }
 
 func (r *repo) GetByUserID(ctx context.Context, userID uuid.UUID) ([]entity.URL, error) {
@@ -130,7 +134,9 @@ func (r *repo) GetByUserID(ctx context.Context, userID uuid.UUID) ([]entity.URL,
 			return nil, err
 		}
 
-		urls = append(urls, entity.NewURL(id, userID, url.URL{}, *value))
+		u := entity.NewURL(id, userID)
+		u.SetLongURL(*value)
+		urls = append(urls, u)
 		fmt.Println(urls)
 	}
 
@@ -167,6 +173,28 @@ func (r *repo) Batch(ctx context.Context, urls []entity.URL) error {
 
 		if err != nil {
 			return err
+		}
+	}
+
+	return tx.Commit(ctx)
+}
+
+func (r *repo) BatchDelete(ctx context.Context, urls []entity.URL) error {
+	tx, err := r.pool.BeginTx(ctx, pgx.TxOptions{})
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+	if err != nil {
+		return err
+	}
+
+	query := `UPDATE urls SET deleted = true WHERE id = $1 and user_id = $2`
+
+	for _, item := range urls {
+		_, err = tx.Exec(ctx, query, item.ID(), item.UserID())
+		if err != nil {
+			r.logger.Error("failed update url", err, slog.String("func", "BatchDelete"))
+			return entity.NewURLErr(item.ID(), item.UserID(), err)
 		}
 	}
 

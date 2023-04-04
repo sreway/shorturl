@@ -49,6 +49,20 @@ func (mr *MockURLMockRecorder) CorrelationID() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CorrelationID", reflect.TypeOf((*MockURL)(nil).CorrelationID))
 }
 
+// Deleted mocks base method.
+func (m *MockURL) Deleted() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Deleted")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Deleted indicates an expected call of Deleted.
+func (mr *MockURLMockRecorder) Deleted() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Deleted", reflect.TypeOf((*MockURL)(nil).Deleted))
+}
+
 // ID mocks base method.
 func (m *MockURL) ID() uuid.UUID {
 	m.ctrl.T.Helper()
@@ -101,6 +115,30 @@ func (m *MockURL) SetCorrelationID(value string) {
 func (mr *MockURLMockRecorder) SetCorrelationID(value interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCorrelationID", reflect.TypeOf((*MockURL)(nil).SetCorrelationID), value)
+}
+
+// SetDeleted mocks base method.
+func (m *MockURL) SetDeleted(value bool) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetDeleted", value)
+}
+
+// SetDeleted indicates an expected call of SetDeleted.
+func (mr *MockURLMockRecorder) SetDeleted(value interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDeleted", reflect.TypeOf((*MockURL)(nil).SetDeleted), value)
+}
+
+// SetLongURL mocks base method.
+func (m *MockURL) SetLongURL(value url.URL) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetLongURL", value)
+}
+
+// SetLongURL indicates an expected call of SetLongURL.
+func (mr *MockURLMockRecorder) SetLongURL(value interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLongURL", reflect.TypeOf((*MockURL)(nil).SetLongURL), value)
 }
 
 // SetShortURL mocks base method.

@@ -8,8 +8,9 @@ import (
 )
 
 type storageURL struct {
-	UserID uuid.UUID
-	Value  url.URL
+	UserID  uuid.UUID
+	Value   url.URL
+	Deleted bool
 }
 
 func (s storageURL) MarshalJSON() ([]byte, error) {

@@ -32,6 +32,10 @@ func Test_delivery_addURL(t *testing.T) {
 	type fields struct {
 		useCaseShortURL string
 		useCaseErr      error
+		userContext     struct {
+			Key   any
+			Value any
+		}
 	}
 
 	tests := []struct {
@@ -49,6 +53,10 @@ func Test_delivery_addURL(t *testing.T) {
 			},
 			fields: fields{
 				useCaseShortURL: "http://localhost:8080/2ZrI5IHFnvPscPYKlxFtRQ",
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: ctxKeyUserID{}, Value: "035f67d8-626b-48f2-b436-8509954fc452"},
 			},
 			want: want{
 				code:     http.StatusCreated,
@@ -68,6 +76,10 @@ func Test_delivery_addURL(t *testing.T) {
 			},
 			fields: fields{
 				useCaseErr: shortener.ErrParseURL,
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: ctxKeyUserID{}, Value: "035f67d8-626b-48f2-b436-8509954fc452"},
 			},
 			want: want{
 				code: http.StatusBadRequest,
@@ -89,6 +101,12 @@ func Test_delivery_addURL(t *testing.T) {
 					"Content-Type": "text/plain",
 				},
 			},
+			fields: fields{
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: ctxKeyUserID{}, Value: "035f67d8-626b-48f2-b436-8509954fc452"},
+			},
 		},
 
 		{
@@ -101,6 +119,10 @@ func Test_delivery_addURL(t *testing.T) {
 			fields: fields{
 				useCaseShortURL: "http://localhost:8080/2ZrI5IHFnvPscPYKlxFtRQ",
 				useCaseErr:      url.ErrAlreadyExist,
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: ctxKeyUserID{}, Value: "035f67d8-626b-48f2-b436-8509954fc452"},
 			},
 			want: want{
 				code:     http.StatusConflict,
@@ -110,10 +132,27 @@ func Test_delivery_addURL(t *testing.T) {
 				},
 			},
 		},
+
+		{
+			name: "negative add url (failed get user id)",
+			args: args{
+				uri:    "/",
+				method: http.MethodPost,
+				body:   `https://ya.ru`,
+			},
+			fields: fields{
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: struct{}{}},
+			},
+			want: want{
+				code: http.StatusBadRequest,
+			},
+		},
 	}
 
 	anyMock := gomock.Any()
-	userID := uuid.New().String()
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
 
@@ -125,7 +164,8 @@ func Test_delivery_addURL(t *testing.T) {
 		d := New(uc)
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.args.method, tt.args.uri, strings.NewReader(tt.args.body))
-			request = request.WithContext(context.WithValue(request.Context(), ctxKeyUserID{}, userID))
+			request = request.WithContext(context.WithValue(request.Context(),
+				tt.fields.userContext.Key, tt.fields.userContext.Value))
 			w := httptest.NewRecorder()
 			h := http.HandlerFunc(d.addURL)
 			h.ServeHTTP(w, request)
@@ -274,6 +314,10 @@ func Test_delivery_shortURL(t *testing.T) {
 	type fields struct {
 		useCaseShortURL string
 		useCaseErr      error
+		userContext     struct {
+			Key   any
+			Value any
+		}
 	}
 
 	tests := []struct {
@@ -291,6 +335,10 @@ func Test_delivery_shortURL(t *testing.T) {
 			},
 			fields: fields{
 				useCaseShortURL: "http://localhost:8080/2ZrI5IHFnvPscPYKlxFtRQ",
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: ctxKeyUserID{}, Value: "035f67d8-626b-48f2-b436-8509954fc452"},
 			},
 			want: want{
 				code:     http.StatusCreated,
@@ -310,6 +358,10 @@ func Test_delivery_shortURL(t *testing.T) {
 			},
 			fields: fields{
 				useCaseErr: shortener.ErrDecodeURL,
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: ctxKeyUserID{}, Value: "035f67d8-626b-48f2-b436-8509954fc452"},
 			},
 			want: want{
 				code: http.StatusBadRequest,
@@ -332,6 +384,12 @@ func Test_delivery_shortURL(t *testing.T) {
 					"Content-Type": "application/json",
 				},
 			},
+			fields: fields{
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: ctxKeyUserID{}, Value: "035f67d8-626b-48f2-b436-8509954fc452"},
+			},
 		},
 
 		{
@@ -344,6 +402,10 @@ func Test_delivery_shortURL(t *testing.T) {
 			fields: fields{
 				useCaseShortURL: "http://localhost:8080/2ZrI5IHFnvPscPYKlxFtRQ",
 				useCaseErr:      url.ErrAlreadyExist,
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: ctxKeyUserID{}, Value: "035f67d8-626b-48f2-b436-8509954fc452"},
 			},
 			want: want{
 				code:     http.StatusConflict,
@@ -353,10 +415,45 @@ func Test_delivery_shortURL(t *testing.T) {
 				},
 			},
 		},
+
+		{
+			name: "negative add url (empty body)",
+			args: args{
+				uri:    "/api/shorten",
+				method: http.MethodPost,
+				body:   ``,
+			},
+			fields: fields{
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: ctxKeyUserID{}, Value: "035f67d8-626b-48f2-b436-8509954fc452"},
+			},
+			want: want{
+				code: http.StatusBadRequest,
+			},
+		},
+
+		{
+			name: "negative add url (failed get user id)",
+			args: args{
+				uri:    "/api/shorten",
+				method: http.MethodPost,
+				body:   ``,
+			},
+			fields: fields{
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: struct{}{}},
+			},
+			want: want{
+				code: http.StatusBadRequest,
+			},
+		},
 	}
 
 	anyMock := gomock.Any()
-	userID := uuid.New().String()
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
 
@@ -368,7 +465,8 @@ func Test_delivery_shortURL(t *testing.T) {
 		d := New(uc)
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.args.method, tt.args.uri, strings.NewReader(tt.args.body))
-			request = request.WithContext(context.WithValue(request.Context(), ctxKeyUserID{}, userID))
+			request = request.WithContext(context.WithValue(request.Context(),
+				tt.fields.userContext.Key, tt.fields.userContext.Value))
 			w := httptest.NewRecorder()
 			h := http.HandlerFunc(d.shortURL)
 			h.ServeHTTP(w, request)
@@ -400,6 +498,10 @@ func Test_delivery_getUserURLs(t *testing.T) {
 			shortURL string
 			longURL  string
 		}
+		userContext struct {
+			Key   any
+			Value any
+		}
 		useCaseErr error
 	}
 
@@ -425,6 +527,10 @@ func Test_delivery_getUserURLs(t *testing.T) {
 						longURL:  "https://ya.ru",
 					},
 				},
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: ctxKeyUserID{}, Value: "035f67d8-626b-48f2-b436-8509954fc452"},
 			},
 			want: want{
 				code:     http.StatusOK,
@@ -447,6 +553,12 @@ func Test_delivery_getUserURLs(t *testing.T) {
 					"Content-Type": "application/json",
 				},
 			},
+			fields: fields{
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: ctxKeyUserID{}, Value: "035f67d8-626b-48f2-b436-8509954fc452"},
+			},
 		},
 
 		{
@@ -457,6 +569,10 @@ func Test_delivery_getUserURLs(t *testing.T) {
 			},
 			fields: fields{
 				useCaseErr: shortener.ErrParseUUID,
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: ctxKeyUserID{}, Value: "035f67d8-626b-48f2-b436-8509954fc452"},
 			},
 			want: want{
 				code: http.StatusBadRequest,
@@ -465,10 +581,27 @@ func Test_delivery_getUserURLs(t *testing.T) {
 				},
 			},
 		},
+
+		{
+			name: "negative get user urls (failed get user id)",
+			args: args{
+				uri:    "/api/user/urls",
+				method: http.MethodGet,
+			},
+			fields: fields{
+				useCaseErr: shortener.ErrParseUUID,
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: struct{}{}},
+			},
+			want: want{
+				code: http.StatusBadRequest,
+			},
+		},
 	}
 
 	anyMock := gomock.Any()
-	userID := uuid.New().String()
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
 
@@ -485,7 +618,8 @@ func Test_delivery_getUserURLs(t *testing.T) {
 		d := New(uc)
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.args.method, tt.args.uri, nil)
-			request = request.WithContext(context.WithValue(request.Context(), ctxKeyUserID{}, userID))
+			request = request.WithContext(context.WithValue(request.Context(),
+				tt.fields.userContext.Key, tt.fields.userContext.Value))
 			w := httptest.NewRecorder()
 			h := http.HandlerFunc(d.getUserURLs)
 			h.ServeHTTP(w, request)
@@ -518,6 +652,10 @@ func Test_delivery_batchURL(t *testing.T) {
 			shortURL      string
 			correlationID string
 		}
+		userContext struct {
+			Key   any
+			Value any
+		}
 		useCaseErr error
 	}
 
@@ -544,6 +682,10 @@ func Test_delivery_batchURL(t *testing.T) {
 						correlationID: "1",
 					},
 				},
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: ctxKeyUserID{}, Value: "035f67d8-626b-48f2-b436-8509954fc452"},
 			},
 			want: want{
 				code:     http.StatusCreated,
@@ -561,6 +703,12 @@ func Test_delivery_batchURL(t *testing.T) {
 				method: http.MethodPost,
 				body:   `[{"correlation_id":"1","original_url":"https://ya.ru"},{"correlation_id":"2"}]`,
 			},
+			fields: fields{
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: ctxKeyUserID{}, Value: "035f67d8-626b-48f2-b436-8509954fc452"},
+			},
 			want: want{
 				code: http.StatusBadRequest,
 				headers: map[string]string{
@@ -575,6 +723,12 @@ func Test_delivery_batchURL(t *testing.T) {
 				uri:    "/api/shorten/batch",
 				method: http.MethodPost,
 				body:   `invalid`,
+			},
+			fields: fields{
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: ctxKeyUserID{}, Value: "035f67d8-626b-48f2-b436-8509954fc452"},
 			},
 			want: want{
 				code: http.StatusBadRequest,
@@ -602,6 +756,10 @@ func Test_delivery_batchURL(t *testing.T) {
 					},
 				},
 				useCaseErr: url.ErrAlreadyExist,
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: ctxKeyUserID{}, Value: "035f67d8-626b-48f2-b436-8509954fc452"},
 			},
 			want: want{
 				code: http.StatusConflict,
@@ -610,10 +768,29 @@ func Test_delivery_batchURL(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "negative add batch url (failed get user id)",
+			args: args{
+				uri:    "/api/shorten/batch",
+				method: http.MethodPost,
+				body:   `[{"correlation_id":"1","original_url":"https://ya.ru"}]`,
+			},
+			fields: fields{
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: struct{}{}},
+			},
+			want: want{
+				code: http.StatusBadRequest,
+				headers: map[string]string{
+					"Content-Type": "application/json",
+				},
+			},
+		},
 	}
 
 	anyMock := gomock.Any()
-	userID := uuid.New().String()
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
 
@@ -630,7 +807,8 @@ func Test_delivery_batchURL(t *testing.T) {
 		d := New(uc)
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.args.method, tt.args.uri, strings.NewReader(tt.args.body))
-			request = request.WithContext(context.WithValue(request.Context(), ctxKeyUserID{}, userID))
+			request = request.WithContext(context.WithValue(request.Context(),
+				tt.fields.userContext.Key, tt.fields.userContext.Value))
 			w := httptest.NewRecorder()
 			h := http.HandlerFunc(d.batchURL)
 			h.ServeHTTP(w, request)
@@ -723,7 +901,11 @@ func Test_delivery_deleteURL(t *testing.T) {
 		body   string
 	}
 	type fields struct {
-		useCaseErr error
+		useCaseErr  error
+		userContext struct {
+			Key   any
+			Value any
+		}
 	}
 
 	tests := []struct {
@@ -739,6 +921,12 @@ func Test_delivery_deleteURL(t *testing.T) {
 				method: http.MethodDelete,
 				body:   `["2ZrI5IHFnvPscPYKlxFtRQ"]`,
 			},
+			fields: fields{
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: ctxKeyUserID{}, Value: "035f67d8-626b-48f2-b436-8509954fc452"},
+			},
 			want: want{
 				code: http.StatusAccepted,
 			},
@@ -750,6 +938,12 @@ func Test_delivery_deleteURL(t *testing.T) {
 				uri:    "/api/user/urls",
 				method: http.MethodDelete,
 				body:   `invalid`,
+			},
+			fields: fields{
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: ctxKeyUserID{}, Value: "035f67d8-626b-48f2-b436-8509954fc452"},
 			},
 			want: want{
 				code: http.StatusBadRequest,
@@ -765,6 +959,10 @@ func Test_delivery_deleteURL(t *testing.T) {
 			},
 			fields: fields{
 				useCaseErr: shortener.ErrParseUUID,
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: ctxKeyUserID{}, Value: "035f67d8-626b-48f2-b436-8509954fc452"},
 			},
 			want: want{
 				code: http.StatusBadRequest,
@@ -780,6 +978,27 @@ func Test_delivery_deleteURL(t *testing.T) {
 			},
 			fields: fields{
 				useCaseErr: shortener.ErrDecodeURL,
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: ctxKeyUserID{}, Value: "035f67d8-626b-48f2-b436-8509954fc452"},
+			},
+			want: want{
+				code: http.StatusBadRequest,
+			},
+		},
+		{
+			name: "negative delete url (failed get user id)",
+			args: args{
+				uri:    "/api/user/urls",
+				method: http.MethodDelete,
+				body:   `["2ZrI5IHFnvPscPYKlxFtRQ", "invalid"]`,
+			},
+			fields: fields{
+				userContext: struct {
+					Key   any
+					Value any
+				}{Key: struct{}{}},
 			},
 			want: want{
 				code: http.StatusBadRequest,
@@ -788,7 +1007,6 @@ func Test_delivery_deleteURL(t *testing.T) {
 	}
 
 	anyMock := gomock.Any()
-	userID := uuid.New().String()
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
 
@@ -798,7 +1016,8 @@ func Test_delivery_deleteURL(t *testing.T) {
 		d := New(uc)
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.args.method, tt.args.uri, strings.NewReader(tt.args.body))
-			request = request.WithContext(context.WithValue(request.Context(), ctxKeyUserID{}, userID))
+			request = request.WithContext(context.WithValue(request.Context(),
+				tt.fields.userContext.Key, tt.fields.userContext.Value))
 			w := httptest.NewRecorder()
 			h := http.HandlerFunc(d.deleteURL)
 			h.ServeHTTP(w, request)

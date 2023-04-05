@@ -64,7 +64,7 @@ func Test_useCase_CreateURL(t *testing.T) {
 				userID: "624708fa-d258-4b99-b09a-49d95f294626",
 			},
 			fields: fields{
-				repoErr: url.ErrAlreadyExist,
+				repoErr: url.NewURLErr(uuid.New(), uuid.New(), url.ErrAlreadyExist),
 			},
 			wantErr: assert.Error,
 		},
@@ -79,6 +79,7 @@ func Test_useCase_CreateURL(t *testing.T) {
 		assert.NoError(t, err)
 		repo := repoMock.NewMockURL(ctl)
 		uc := New(repo, cfg.ShortURL())
+
 		repo.EXPECT().Add(anyMock, anyMock).Return(tt.fields.repoErr).AnyTimes()
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := uc.CreateURL(ctx, tt.args.rawURL, tt.args.userID)
@@ -114,7 +115,8 @@ func Test_useCase_GetURL(t *testing.T) {
 		{
 			name: "positive get url",
 			args: args{
-				urlID: "5nPymsbLZfXlsUDlZ4MIhY",
+				urlID:   "5nPymsbLZfXlsUDlZ4MIhY",
+				deleted: false,
 			},
 			wantErr: assert.NoError,
 		},
@@ -122,7 +124,8 @@ func Test_useCase_GetURL(t *testing.T) {
 		{
 			name: "negative get url (not found)",
 			args: args{
-				urlID: "5nPymsbLZfXlsUDlZ4MIhY",
+				urlID:   "5nPymsbLZfXlsUDlZ4MIhY",
+				deleted: false,
 			},
 			fields: fields{
 				repoErr: url.ErrNotFound,
@@ -133,7 +136,26 @@ func Test_useCase_GetURL(t *testing.T) {
 		{
 			name: "negative get url (invalid url id)",
 			args: args{
-				urlID: "invalid",
+				urlID:   "invalid",
+				deleted: false,
+			},
+			wantErr: assert.Error,
+		},
+
+		{
+			name: "negative get url (invalid url id, not uuid)",
+			args: args{
+				urlID:   "2ZrI5IHFnvPscPYKlxFtRQs",
+				deleted: false,
+			},
+			wantErr: assert.Error,
+		},
+
+		{
+			name: "negative get url (deleted)",
+			args: args{
+				urlID:   "5nPymsbLZfXlsUDlZ4MIhY",
+				deleted: true,
 			},
 			wantErr: assert.Error,
 		},
@@ -184,6 +206,17 @@ func Test_useCase_GetUserURLs(t *testing.T) {
 				userID: "035f67d8-626b-48f2-b436-8509954fc452",
 			},
 			wantErr: assert.NoError,
+		},
+
+		{
+			name: "negative get urls (not found)",
+			args: args{
+				userID: "invalid",
+			},
+			fields: fields{
+				repoErr: url.ErrNotFound,
+			},
+			wantErr: assert.Error,
 		},
 
 		{
@@ -396,6 +429,14 @@ func Test_useCase_DeleteURL(t *testing.T) {
 			args: args{
 				userID: "035f67d8-626b-48f2-b436-8509954fc452",
 				urlID:  []string{"5nPymsbLZfXlsUDlZ4MIhY", "invalid"},
+			},
+			wantErr: assert.Error,
+		},
+		{
+			name: "negative delete url (invalid url id, not uuid)",
+			args: args{
+				userID: "035f67d8-626b-48f2-b436-8509954fc452",
+				urlID:  []string{"2ZrI5IHFnvPscPYKlxFtRQs"},
 			},
 			wantErr: assert.Error,
 		},

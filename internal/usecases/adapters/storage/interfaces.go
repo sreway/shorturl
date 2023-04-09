@@ -13,7 +13,8 @@ type URL interface {
 	Add(ctx context.Context, url entity.URL) error
 	Get(ctx context.Context, id uuid.UUID) (entity.URL, error)
 	GetByUserID(ctx context.Context, userID uuid.UUID) ([]entity.URL, error)
+	Batch(ctx context.Context, urls []entity.URL) error
+	BatchDelete(ctx context.Context, urls []entity.URL) error
 	Ping(ctx context.Context) error
 	Close() error
-	Batch(ctx context.Context, urls []entity.URL) error
 }

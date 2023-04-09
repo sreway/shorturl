@@ -64,6 +64,20 @@ func (mr *MockURLMockRecorder) Batch(ctx, urls interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Batch", reflect.TypeOf((*MockURL)(nil).Batch), ctx, urls)
 }
 
+// BatchDelete mocks base method.
+func (m *MockURL) BatchDelete(ctx context.Context, urls []url.URL) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BatchDelete", ctx, urls)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// BatchDelete indicates an expected call of BatchDelete.
+func (mr *MockURLMockRecorder) BatchDelete(ctx, urls interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BatchDelete", reflect.TypeOf((*MockURL)(nil).BatchDelete), ctx, urls)
+}
+
 // Close mocks base method.
 func (m *MockURL) Close() error {
 	m.ctrl.T.Helper()

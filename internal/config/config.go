@@ -2,6 +2,7 @@ package config
 
 import (
 	"net/url"
+	"time"
 
 	"github.com/caarlos0/env/v7"
 )
@@ -23,6 +24,8 @@ type (
 
 	ShortURL interface {
 		GetBaseURL() *url.URL
+		GetCheckTaskInterval() time.Duration
+		GetMaxTaskQueue() int
 	}
 
 	Storage interface {
@@ -60,7 +63,9 @@ type (
 	}
 
 	shortURL struct {
-		BaseURL *url.URL `env:"BASE_URL" envDefault:"http://127.0.0.1:8080"`
+		BaseURL           *url.URL      `env:"BASE_URL" envDefault:"http://127.0.0.1:8080"`
+		CheckTaskInterval time.Duration `env:"CHECK_TASK_INTERVAL" envDefault:"5s"`
+		MaxTaskQueue      int           `env:"MAX_TASK_QUEUE" envDefault:"100"`
 	}
 
 	storage struct {
@@ -112,6 +117,14 @@ func (h *http) GetCompressLevel() int {
 
 func (s *shortURL) GetBaseURL() *url.URL {
 	return s.BaseURL
+}
+
+func (s *shortURL) GetMaxTaskQueue() int {
+	return s.MaxTaskQueue
+}
+
+func (s *shortURL) GetCheckTaskInterval() time.Duration {
+	return s.CheckTaskInterval
 }
 
 func (store *storage) Cache() *cache {

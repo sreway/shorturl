@@ -2,7 +2,6 @@ package cache
 
 import (
 	"context"
-	"net/url"
 	"os"
 	"sync"
 
@@ -41,7 +40,11 @@ func (r *repo) Get(_ context.Context, id uuid.UUID) (entity.URL, error) {
 	if !ok {
 		return nil, entity.ErrNotFound
 	}
-	return entity.NewURL(uuid.UUID{}, i.UserID, url.URL{}, i.Value), nil
+
+	u := entity.NewURL(id, i.UserID)
+	u.SetLongURL(i.Value)
+	u.SetDeleted(i.Deleted)
+	return u, nil
 }
 
 func (r *repo) GetByUserID(_ context.Context, userID uuid.UUID) ([]entity.URL, error) {
@@ -51,7 +54,9 @@ func (r *repo) GetByUserID(_ context.Context, userID uuid.UUID) ([]entity.URL, e
 
 	for k, v := range r.data {
 		if v.UserID == userID {
-			u := entity.NewURL(k, v.UserID, url.URL{}, v.Value)
+			u := entity.NewURL(k, v.UserID)
+			u.SetLongURL(v.Value)
+			u.SetDeleted(v.Deleted)
 			result = append(result, u)
 		}
 	}
@@ -87,6 +92,23 @@ func (r *repo) Batch(_ context.Context, urls []entity.URL) error {
 			Value:  item.LongValue(),
 		}
 	}
+	return nil
+}
+
+func (r *repo) BatchDelete(_ context.Context, urls []entity.URL) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for _, item := range urls {
+		v, ok := r.data[item.ID()]
+		if !ok {
+			r.logger.Error("url not found", entity.ErrNotFound, slog.String("func", "BatchDelete"))
+		}
+
+		v.Deleted = true
+		r.data[item.ID()] = v
+	}
+
 	return nil
 }
 

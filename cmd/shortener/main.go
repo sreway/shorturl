@@ -124,6 +124,16 @@ func main() {
 		service := shortener.New(repo, configShortURL)
 		srv := http.New(service)
 
+		go func() {
+			err = service.ProcQueue(ctx, cfg.ShortURL().GetCheckTaskInterval())
+			if err != nil {
+				log.Error("failed processed task queue", err)
+				stop()
+				exit <- 1
+				return
+			}
+		}()
+
 		err = srv.Run(ctx, cfg.HTTP())
 		if err != nil {
 			log.Error("failed run delivery", err)
@@ -132,7 +142,6 @@ func main() {
 			return
 		}
 	}()
-
 	go func() {
 		<-ctx.Done()
 		stop()

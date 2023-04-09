@@ -16,8 +16,11 @@ type (
 		LongValue() url.URL
 		ShortValue() url.URL
 		CorrelationID() string
+		Deleted() bool
+		SetLongURL(value url.URL)
 		SetShortURL(value url.URL)
 		SetCorrelationID(value string)
+		SetDeleted(value bool)
 	}
 
 	entity struct {
@@ -26,6 +29,7 @@ type (
 		longURL       url.URL
 		shortURL      url.URL
 		correlationID string
+		deleted       bool
 	}
 )
 
@@ -57,19 +61,29 @@ func (e *entity) CorrelationID() string {
 	return e.correlationID
 }
 
+func (e *entity) Deleted() bool {
+	return e.deleted
+}
+
 func (e *entity) SetShortURL(value url.URL) {
 	e.shortURL = value
+}
+
+func (e *entity) SetLongURL(value url.URL) {
+	e.longURL = value
 }
 
 func (e *entity) SetCorrelationID(value string) {
 	e.correlationID = value
 }
 
-func NewURL(id, userID uuid.UUID, shortURL, longURL url.URL) *entity {
+func (e *entity) SetDeleted(value bool) {
+	e.deleted = value
+}
+
+func NewURL(id, userID uuid.UUID) *entity {
 	return &entity{
-		id:       id,
-		shortURL: shortURL,
-		longURL:  longURL,
-		userID:   userID,
+		id:     id,
+		userID: userID,
 	}
 }

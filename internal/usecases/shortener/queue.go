@@ -38,7 +38,7 @@ func (uc *useCase) ProcQueue(ctx context.Context, checkInterval time.Duration) e
 				continue
 			}
 
-			actions := map[action][]url.URL{}
+			actions := make(map[action][]url.URL, len(uc.taskQueue))
 
 			for len(uc.taskQueue) != 0 {
 				t := <-uc.taskQueue

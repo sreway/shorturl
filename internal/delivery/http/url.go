@@ -77,16 +77,6 @@ func (d *delivery) getURL(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *delivery) shortURL(w http.ResponseWriter, r *http.Request) {
-	type (
-		reqURL struct {
-			URL string `json:"url"`
-		}
-
-		respURL struct {
-			Result string `json:"result"`
-		}
-	)
-
 	w.Header().Set("Content-Type", "application/json")
 
 	userID, ok := r.Context().Value(ctxKeyUserID{}).(string)
@@ -96,7 +86,7 @@ func (d *delivery) shortURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := new(reqURL)
+	req := new(shortURLRequest)
 	decoder := json.NewDecoder(r.Body)
 
 	if err := decoder.Decode(&req); err != nil {
@@ -105,7 +95,7 @@ func (d *delivery) shortURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := new(respURL)
+	res := new(shortURLResponse)
 
 	u, err := d.shortener.CreateURL(r.Context(), req.URL, userID)
 	if err != nil {
@@ -136,11 +126,6 @@ func (d *delivery) shortURL(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *delivery) userURL(w http.ResponseWriter, r *http.Request) {
-	type respURL struct {
-		ShortURL    string `json:"short_url"`
-		OriginalURL string `json:"original_url"`
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 
 	userID, ok := r.Context().Value(ctxKeyUserID{}).(string)
@@ -164,10 +149,10 @@ func (d *delivery) userURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := make([]respURL, 0, len(urls))
+	resp := make([]userURLResponse, 0, len(urls))
 
 	for _, url := range urls {
-		resp = append(resp, respURL{
+		resp = append(resp, userURLResponse{
 			url.ShortURL(),
 			url.LongURL(),
 		})
@@ -188,18 +173,6 @@ func (d *delivery) userURL(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *delivery) batchURL(w http.ResponseWriter, r *http.Request) {
-	type (
-		reqURL struct {
-			CorrelationID string `json:"correlation_id"`
-			OriginalURL   string `json:"original_url"`
-		}
-
-		respURL struct {
-			CorrelationID string `json:"correlation_id"`
-			ShortURL      string `json:"short_url"`
-		}
-	)
-
 	w.Header().Set("Content-Type", "application/json")
 
 	userID, ok := r.Context().Value(ctxKeyUserID{}).(string)
@@ -210,7 +183,7 @@ func (d *delivery) batchURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := new([]reqURL)
+	req := new([]batchURLRequest)
 	decoder := json.NewDecoder(r.Body)
 
 	if err := decoder.Decode(&req); err != nil {
@@ -246,10 +219,10 @@ func (d *delivery) batchURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := make([]respURL, 0)
+	resp := make([]batchURLResponse, 0)
 
 	for _, i := range urls {
-		resp = append(resp, respURL{
+		resp = append(resp, batchURLResponse{
 			i.CorrelationID(), i.ShortURL(),
 		})
 	}

@@ -1,5 +1,11 @@
 package http
 
+import (
+	"net/http"
+
+	"github.com/go-chi/render"
+)
+
 type (
 	shortURLResponse struct {
 		Result string `json:"result"`
@@ -12,4 +18,14 @@ type (
 		CorrelationID string `json:"correlation_id"`
 		ShortURL      string `json:"short_url"`
 	}
+	errResponse struct {
+		Err            error  `json:"-"`
+		HTTPStatusCode int    `json:"-"`
+		ErrorText      string `json:"error,omitempty"`
+	}
 )
+
+func (er *errResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	render.Status(r, er.HTTPStatusCode)
+	return nil
+}

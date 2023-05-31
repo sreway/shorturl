@@ -26,7 +26,7 @@ func (d *delivery) routerURL(r chi.Router) {
 			r.Post("/batch", d.batchURL)
 		})
 		r.Route("/user", func(r chi.Router) {
-			r.Get("/urls", d.getUserURLs)
+			r.Get("/urls", d.userURL)
 			r.Delete("/urls", d.deleteURL)
 		})
 	})

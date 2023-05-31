@@ -621,7 +621,7 @@ func Test_delivery_getUserURLs(t *testing.T) {
 			request = request.WithContext(context.WithValue(request.Context(),
 				tt.fields.userContext.Key, tt.fields.userContext.Value))
 			w := httptest.NewRecorder()
-			h := http.HandlerFunc(d.getUserURLs)
+			h := http.HandlerFunc(d.userURL)
 			h.ServeHTTP(w, request)
 			resp := w.Result()
 			defer resp.Body.Close()

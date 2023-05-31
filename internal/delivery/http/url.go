@@ -135,7 +135,7 @@ func (d *delivery) shortURL(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (d *delivery) getUserURLs(w http.ResponseWriter, r *http.Request) {
+func (d *delivery) userURL(w http.ResponseWriter, r *http.Request) {
 	type respURL struct {
 		ShortURL    string `json:"short_url"`
 		OriginalURL string `json:"original_url"`

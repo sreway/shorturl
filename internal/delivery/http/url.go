@@ -149,13 +149,13 @@ func (d *delivery) userURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := make([]userURLResponse, 0, len(urls))
+	resp := make([]userURLResponse, len(urls))
 
-	for _, url := range urls {
-		resp = append(resp, userURLResponse{
+	for idx, url := range urls {
+		resp[idx] = userURLResponse{
 			url.ShortURL(),
 			url.LongURL(),
-		})
+		}
 	}
 
 	data, err := json.Marshal(resp)
@@ -219,12 +219,13 @@ func (d *delivery) batchURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := make([]batchURLResponse, 0)
+	resp := make([]batchURLResponse, len(urls))
 
-	for _, i := range urls {
-		resp = append(resp, batchURLResponse{
-			i.CorrelationID(), i.ShortURL(),
-		})
+	for idx, url := range urls {
+		resp[idx] = batchURLResponse{
+			url.CorrelationID(),
+			url.ShortURL(),
+		}
 	}
 
 	data, err := json.Marshal(resp)

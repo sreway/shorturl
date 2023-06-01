@@ -1,3 +1,4 @@
+// Package usecases describes the services used in the application.
 package usecases
 
 import (
@@ -6,6 +7,8 @@ import (
 	"github.com/sreway/shorturl/internal/domain/url"
 )
 
+// Shortener describes the implementation of the URL shortening service.
+//
 //go:generate mockgen -source=./internal/usecases/interfaces.go -destination=./internal/usecases/mock/mock_usecases.go -package=usecaseMock
 type Shortener interface {
 	CreateURL(ctx context.Context, rawURL string, userID string) (url.URL, error)

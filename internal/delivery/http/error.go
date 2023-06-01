@@ -12,6 +12,7 @@ var (
 	ErrStorageCheck   = errors.New("failed storage check")
 )
 
+// errRender implements renderer interface for managing response payloads.
 func errRender(statusCode int, err error) render.Renderer {
 	return &errResponse{
 		Err:            err,

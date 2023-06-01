@@ -7,12 +7,14 @@ import (
 	"github.com/google/uuid"
 )
 
+// storageURL describes the short URL type used in repository.
 type storageURL struct {
 	UserID  uuid.UUID
 	Value   url.URL
 	Deleted bool
 }
 
+// MarshalJSON implements the "MarshalJSON" method for the short URL type used in repository.
 func (s storageURL) MarshalJSON() ([]byte, error) {
 	type alias struct {
 		UserID uuid.UUID `json:"user_id"`
@@ -24,6 +26,7 @@ func (s storageURL) MarshalJSON() ([]byte, error) {
 	return json.Marshal(aliasValue)
 }
 
+// UnmarshalJSON implements the "UnmarshalJSON" method for the short URL type used in repository.
 func (s *storageURL) UnmarshalJSON(data []byte) error {
 	type alias struct {
 		UserID uuid.UUID `json:"user_id"`

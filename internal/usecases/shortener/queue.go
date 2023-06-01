@@ -11,7 +11,8 @@ import (
 
 type (
 	action string
-	task   struct {
+	// task implements the task type for the queue.
+	task struct {
 		name action
 		urls []url.URL
 	}
@@ -21,6 +22,7 @@ const (
 	deleteAction action = "delete"
 )
 
+// NewTask implements the creation of task for queue.
 func NewTask(name action, urls []url.URL) *task {
 	return &task{
 		name: name,
@@ -28,6 +30,7 @@ func NewTask(name action, urls []url.URL) *task {
 	}
 }
 
+// ProcQueue implements processing task queue.
 func (uc *useCase) ProcQueue(ctx context.Context, checkInterval time.Duration) error {
 	tick := time.NewTicker(checkInterval)
 	defer tick.Stop()

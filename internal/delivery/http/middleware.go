@@ -13,14 +13,17 @@ import (
 	"github.com/sreway/shorturl/internal/delivery/http/cookies"
 )
 
+// ctxKeyUserID describes the type context value of the user ID.
 type ctxKeyUserID struct{}
 
+// useMiddleware implements middleware connection.
 func (d *delivery) useMiddleware(http config.HTTP, r chi.Router) {
 	r.Use(middleware.Compress(http.GetCompressLevel(), http.GetCompressTypes()...))
 	r.Use(decodeGZIP)
 	r.Use(signCookie(http.GetCookie().SignID, http.GetCookie().SecretKey))
 }
 
+// decodeGZIP implements compression middleware.
 func decodeGZIP(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Content-Encoding") == "gzip" {
@@ -34,6 +37,7 @@ func decodeGZIP(next http.Handler) http.Handler {
 	})
 }
 
+// signCookie implements sign cookie middleware.
 func signCookie(name string, secretKey string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

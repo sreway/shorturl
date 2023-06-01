@@ -1,7 +1,9 @@
 package cache
 
+// Option describes an option for repository.
 type Option func(*repo) error
 
+// File implements an option that sets the file path.
 func File(path string) Option {
 	return func(r *repo) error {
 		if len(path) == 0 {

@@ -25,6 +25,7 @@ type (
 	}
 )
 
+// Render renders a single payload and respond to the client request.
 func (er *errResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	render.Status(r, er.HTTPStatusCode)
 	return nil

@@ -1,3 +1,4 @@
+// Package cookies implements middleware for signing cookies.
 package cookies
 
 import (
@@ -13,6 +14,7 @@ var (
 	ErrInvalidValue = errors.New("invalid cookie value")
 )
 
+// ReadSigned implements extracting signature from a cookie.
 func ReadSigned(r *http.Request, name string, secretKey string) (string, error) {
 	cookie, err := r.Cookie(name)
 	if err != nil {
@@ -44,6 +46,7 @@ func ReadSigned(r *http.Request, name string, secretKey string) (string, error) 
 	return value, nil
 }
 
+// WriteSigned implements cookie signing.
 func WriteSigned(w http.ResponseWriter, cookie http.Cookie, secretKey string) {
 	mac := hmac.New(sha256.New, []byte(secretKey))
 	mac.Write([]byte(cookie.Name))

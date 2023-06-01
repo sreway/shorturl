@@ -7,10 +7,12 @@ import (
 	"github.com/google/uuid"
 )
 
+// fs describes the type of stored data.
 type fs struct {
 	Data map[uuid.UUID]storageURL `json:"data"`
 }
 
+// fileOpen implements the opening of the storage file.
 func (r *repo) fileOpen(path string) error {
 	flag := os.O_RDWR | os.O_CREATE
 	file, err := os.OpenFile(path, flag, 0o644)
@@ -21,6 +23,7 @@ func (r *repo) fileOpen(path string) error {
 	return nil
 }
 
+// fileClose implements closing the storage file.
 func (r *repo) fileClose() error {
 	err := r.fileStore()
 	if err != nil {
@@ -31,6 +34,7 @@ func (r *repo) fileClose() error {
 	return r.file.Close()
 }
 
+// fileLoad implements loading the storage state from a file.
 func (r *repo) fileLoad() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -47,6 +51,7 @@ func (r *repo) fileLoad() error {
 	return nil
 }
 
+// fileStore implements saving the storage state to a file.
 func (r *repo) fileStore() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

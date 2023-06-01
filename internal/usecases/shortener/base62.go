@@ -8,6 +8,7 @@ import (
 
 const base62Chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
+// encodeUUID implements UUID encoding (RFC-4122) in base62 string.
 func encodeUUID(uuid [16]byte) string {
 	num := big.NewInt(0).SetBytes(uuid[:])
 	base62 := big.NewInt(62)
@@ -24,6 +25,7 @@ func encodeUUID(uuid [16]byte) string {
 	return string(buf[n:])
 }
 
+// decodeUUID implements decoding base62 string to UUID (RFC-4122).
 func decodeUUID(s string) ([]byte, error) {
 	num := big.NewInt(0)
 	base62 := big.NewInt(62)

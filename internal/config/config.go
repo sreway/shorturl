@@ -22,6 +22,7 @@ type (
 		GetCompressTypes() []string
 		GetCompressLevel() int
 		GetCookie() *cookie
+		GetSwagger() *swagger
 	}
 	// ShortURL describes the implementation of the URL shortening service configuration.
 	ShortURL interface {
@@ -43,6 +44,14 @@ type (
 	Cache interface {
 		GetFilePath() string
 	}
+	// Swagger describes the implementation of th Swagger configuration.
+	Swagger interface {
+		GetTitle() string
+		GetDescription() string
+		GetHost() string
+		GetBasePath() string
+		GetSchemes() []string
+	}
 
 	config struct {
 		http     *http
@@ -57,6 +66,7 @@ type (
 		CompressLevel int      `env:"HTTP_COMPRESS_LEVEL" envDefault:"5"`
 		cookie        *cookie
 		SecretKey     string `env:"HTTP_SECRET_KEY" envDefault:"secret"`
+		swagger       *swagger
 	}
 
 	cookie struct {
@@ -82,6 +92,14 @@ type (
 	postgres struct {
 		DSN        string `env:"DATABASE_DSN"`
 		MigrateURL string `env:"MIGRATE_URL" envDefault:"file://migrations/postgres"`
+	}
+
+	swagger struct {
+		Title       string   `json:"title" env:"SWAGGER_TITLE" envDefault:"Shortener API"`
+		Description string   `json:"description" env:"SWAGGER_DESCRIPTION"`
+		Host        string   `json:"host" env:"SWAGGER_HOST" envDefault:"127.0.0.1:8080"`
+		BasePath    string   `json:"basePath" env:"SWAGGER_BASE_PATH"`
+		Schemes     []string `json:"schemes" env:"SWAGGER_SCHEMES" envSeparator:":" envDefault:"http"`
 	}
 )
 
@@ -125,6 +143,11 @@ func (h *http) GetCompressLevel() int {
 	return h.CompressLevel
 }
 
+// GetSwagger implements getting Swagger configuration.
+func (h *http) GetSwagger() *swagger {
+	return h.swagger
+}
+
 // GetBaseURL implements getting the base URL for the URL shortening service.
 func (s *shortURL) GetBaseURL() *url.URL {
 	return s.BaseURL
@@ -165,12 +188,38 @@ func (p *postgres) GetMigrateURL() string {
 	return p.MigrateURL
 }
 
+// GetTitle implements getting Swagger title.
+func (s *swagger) GetTitle() string {
+	return s.Title
+}
+
+// GetDescription implements getting Swagger description.
+func (s *swagger) GetDescription() string {
+	return s.Description
+}
+
+// GetHost implements getting Swagger host.
+func (s *swagger) GetHost() string {
+	return s.Host
+}
+
+// GetBasePath implements getting Swagger base path.
+func (s *swagger) GetBasePath() string {
+	return s.BasePath
+}
+
+// GetSchemes implements getting Swagger schemes.
+func (s *swagger) GetSchemes() []string {
+	return s.Schemes
+}
+
 // NewConfig implements the creation of the application configuration.
 func NewConfig() (*config, error) {
 	cfg := new(config)
 	cfg.shortURL = new(shortURL)
 	cfg.http = new(http)
 	cfg.http.cookie = new(cookie)
+	cfg.http.swagger = new(swagger)
 	cfg.storage = new(storage)
 	cfg.storage.cache = new(cache)
 	cfg.storage.postgres = new(postgres)
@@ -192,6 +241,10 @@ func NewConfig() (*config, error) {
 	}
 
 	if err := env.Parse(cfg.http.cookie); err != nil {
+		return nil, err
+	}
+
+	if err := env.Parse(cfg.http.swagger); err != nil {
 		return nil, err
 	}
 

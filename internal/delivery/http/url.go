@@ -16,6 +16,18 @@ import (
 
 var urlSlug = regexp.MustCompile(`[^/][A-Za-z\d]+$`)
 
+// addURL godoc
+// @Summary add short URL
+// @Description add short URL
+// @ID addURL
+// @Produce text/plain
+// @Param longURL body string true "long URL to shorten"
+// @Success 201 {string} string
+// @Failure 409 {object} errResponse
+// @Failure 400 {object} errResponse
+// @Failure 500 {object} errResponse
+// @Failure 501 {object} errResponse
+// @Router / [post]
 func (d *delivery) addURL(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 
@@ -57,6 +69,18 @@ func (d *delivery) addURL(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// getURL godoc
+// @Summary get short URL
+// @Description get short URL
+// @ID getURL
+// @Produce text/plain
+// @Param id path string true "short URL id"
+// @Success 200 {string} string
+// @Failure 404 {object} errResponse
+// @Failure 400 {object} errResponse
+// @Failure 500 {object} errResponse
+// @Failure 501 {object} errResponse
+// @Router /{id} [post]
 func (d *delivery) getURL(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 
@@ -77,6 +101,18 @@ func (d *delivery) getURL(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
+// shortURL godoc
+// @Summary create short URL
+// @Description create short URL
+// @ID shortURL
+// @Produce application/json
+// @Param longURL body shortURLRequest true "long URL to shorten"
+// @Success 201 {object} shortURLResponse
+// @Failure 409 {object} errResponse
+// @Failure 400 {object} errResponse
+// @Failure 500 {object} errResponse
+// @Failure 501 {object} errResponse
+// @Router /api/shorten [post]
 func (d *delivery) shortURL(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
@@ -126,6 +162,17 @@ func (d *delivery) shortURL(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// userURL godoc
+// @Summary get short URLs for user ID
+// @Description get short URLs for user ID
+// @ID userURL
+// @Produce application/json
+// @Success 201 {object} []userURLResponse
+// @Failure 404 {object} errResponse
+// @Failure 400 {object} errResponse
+// @Failure 500 {object} errResponse
+// @Failure 501 {object} errResponse
+// @Router /api/shorten/user/urls [get]
 func (d *delivery) userURL(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
@@ -173,6 +220,18 @@ func (d *delivery) userURL(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// batchURL godoc
+// @Summary create of several short URLs
+// @Description create of several short URLs
+// @ID batchURL
+// @Produce application/json
+// @Param bathURL body []batchURLRequest true "several long URLs to shorten"
+// @Success 201 {object} []batchURLResponse
+// @Failure 409 {object} errResponse
+// @Failure 400 {object} errResponse
+// @Failure 500 {object} errResponse
+// @Failure 501 {object} errResponse
+// @Router /api/shorten/batch [post]
 func (d *delivery) batchURL(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
@@ -244,6 +303,18 @@ func (d *delivery) batchURL(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// deleteURL godoc
+// @Summary remove multiple short URLs
+// @Description remove multiple short URLs
+// @ID deleteURL
+// @Produce application/json
+// @Param ids body []string true "short URL ids to delete"
+// @Success 202
+// @Failure 410 {object} errResponse
+// @Failure 400 {object} errResponse
+// @Failure 500 {object} errResponse
+// @Failure 501 {object} errResponse
+// @Router /api/shorten/user/urls [delete]
 func (d *delivery) deleteURL(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -274,6 +345,15 @@ func (d *delivery) deleteURL(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 }
 
+// ping godoc
+// @Summary health check shortener storage
+// @Description health check shortener storage
+// @ID ping
+// @Success 200
+// @Failure 400 {object} errResponse
+// @Failure 500 {object} errResponse
+// @Failure 501 {object} errResponse
+// @Router /ping [get]
 func (d *delivery) ping(w http.ResponseWriter, r *http.Request) {
 	err := d.shortener.StorageCheck(r.Context())
 	if err != nil {

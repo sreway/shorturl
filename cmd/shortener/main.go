@@ -54,6 +54,8 @@ func init() {
 	}
 }
 
+// @contact.name   API Support
+// @contact.email  a.y.oleynik@gmail.com
 func main() {
 	var code int
 

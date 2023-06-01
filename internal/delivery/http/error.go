@@ -7,9 +7,12 @@ import (
 )
 
 var (
+	// ErrInvalidRequest implements invalid http request error.
 	ErrInvalidRequest = errors.New("invalid request")
+	// ErrInternalServer implements internal server error.
 	ErrInternalServer = errors.New("internal server error")
-	ErrStorageCheck   = errors.New("failed storage check")
+	// ErrStorageCheck implements storage check error.
+	ErrStorageCheck = errors.New("failed storage check")
 )
 
 // errRender implements renderer interface for managing response payloads.

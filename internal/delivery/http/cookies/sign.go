@@ -10,7 +10,9 @@ import (
 )
 
 var (
-	ErrNotFound     = errors.New("cookie not found")
+	// ErrNotFound implements cookie not found error.
+	ErrNotFound = errors.New("cookie not found")
+	// ErrInvalidValue implements invalid cookie value error.
 	ErrInvalidValue = errors.New("invalid cookie value")
 )
 

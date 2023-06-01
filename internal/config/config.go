@@ -52,13 +52,13 @@ type (
 		GetBasePath() string
 		GetSchemes() []string
 	}
-
+	// config implements application configuration.
 	config struct {
 		http     *http
 		shortURL *shortURL
 		storage  *storage
 	}
-
+	// http implements http server configuration.
 	http struct {
 		Scheme        string   `env:"SERVER_SCHEME" envDefault:"http"`
 		Address       string   `env:"SERVER_ADDRESS" envDefault:"127.0.0.1:8080"`
@@ -68,32 +68,32 @@ type (
 		SecretKey     string `env:"HTTP_SECRET_KEY" envDefault:"secret"`
 		swagger       *swagger
 	}
-
+	// cookie implements http server cookies configuration.
 	cookie struct {
 		SignID    string `env:"COOKIE_SIGN_ID" envDefault:"user_id"`
 		SecretKey string `env:"COOKIE_SECRET_KEY" envDefault:"secret_key"`
 	}
-
+	// shortURL implements shortener configuration.
 	shortURL struct {
 		BaseURL           *url.URL      `env:"BASE_URL" envDefault:"http://127.0.0.1:8080"`
 		CheckTaskInterval time.Duration `env:"CHECK_TASK_INTERVAL" envDefault:"5s"`
 		MaxTaskQueue      int           `env:"MAX_TASK_QUEUE" envDefault:"100"`
 	}
-
+	// storage implements storage configuration.
 	storage struct {
 		cache    *cache
 		postgres *postgres
 	}
-
+	// cache implements in-memory storage configuration.
 	cache struct {
 		FilePath string `env:"FILE_STORAGE_PATH" envDefault:"./storage.json"`
 	}
-
+	// postgres implements postgres configuration.
 	postgres struct {
 		DSN        string `env:"DATABASE_DSN"`
 		MigrateURL string `env:"MIGRATE_URL" envDefault:"file://migrations/postgres"`
 	}
-
+	// swagger implements swagger configuration.
 	swagger struct {
 		Title       string   `json:"title" env:"SWAGGER_TITLE" envDefault:"Shortener API"`
 		Description string   `json:"description" env:"SWAGGER_DESCRIPTION"`

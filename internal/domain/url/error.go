@@ -8,9 +8,12 @@ import (
 )
 
 var (
-	ErrNotFound     = errors.New("URL not found")
+	// ErrNotFound implements short URL not found error.
+	ErrNotFound = errors.New("URL not found")
+	// ErrAlreadyExist implements short URL already exist error.
 	ErrAlreadyExist = errors.New("URL already exist")
-	ErrDeleted      = errors.New("URL deleted")
+	// ErrDeleted implements short URL already deleted error.
+	ErrDeleted = errors.New("URL deleted")
 )
 
 type (

@@ -9,12 +9,11 @@ import (
 	"net/http"
 )
 
-var (
-	// ErrNotFound implements cookie not found error.
-	ErrNotFound = errors.New("cookie not found")
-	// ErrInvalidValue implements invalid cookie value error.
-	ErrInvalidValue = errors.New("invalid cookie value")
-)
+// ErrNotFound implements cookie not found error.
+var ErrNotFound = errors.New("cookie not found")
+
+// ErrInvalidValue implements invalid cookie value error.
+var ErrInvalidValue = errors.New("invalid cookie value")
 
 // ReadSigned implements extracting signature from a cookie.
 func ReadSigned(r *http.Request, name string, secretKey string) (string, error) {

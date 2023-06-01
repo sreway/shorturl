@@ -7,23 +7,21 @@ import (
 	"github.com/google/uuid"
 )
 
-var (
-	// ErrNotFound implements short URL not found error.
-	ErrNotFound = errors.New("URL not found")
-	// ErrAlreadyExist implements short URL already exist error.
-	ErrAlreadyExist = errors.New("URL already exist")
-	// ErrDeleted implements short URL already deleted error.
-	ErrDeleted = errors.New("URL deleted")
-)
+// ErrNotFound implements short URL not found error.
+var ErrNotFound = errors.New("URL not found")
 
-type (
-	// ErrURL defines short URL error.
-	ErrURL struct {
-		error  error
-		id     uuid.UUID
-		userID uuid.UUID
-	}
-)
+// ErrAlreadyExist implements short URL already exist error.
+var ErrAlreadyExist = errors.New("URL already exist")
+
+// ErrDeleted implements short URL already deleted error.
+var ErrDeleted = errors.New("URL deleted")
+
+// ErrURL defines short URL error.
+type ErrURL struct {
+	error  error
+	id     uuid.UUID
+	userID uuid.UUID
+}
 
 // Error implements "Error" method for short URL error.
 func (e *ErrURL) Error() string {

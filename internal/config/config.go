@@ -8,100 +8,112 @@ import (
 	"github.com/caarlos0/env/v7"
 )
 
-type (
-	// Config describes the implementation of the application configuration.
-	Config interface {
-		HTTP() *http
-		ShortURL() *shortURL
-		Storage() *storage
-	}
-	// HTTP describes the implementation of the http server configuration.
-	HTTP interface {
-		GetScheme() string
-		GetAddress() string
-		GetCompressTypes() []string
-		GetCompressLevel() int
-		GetCookie() *cookie
-		GetSwagger() *swagger
-	}
-	// ShortURL describes the implementation of the URL shortening service configuration.
-	ShortURL interface {
-		GetBaseURL() *url.URL
-		GetCheckTaskInterval() time.Duration
-		GetMaxTaskQueue() int
-	}
-	// Storage describes the implementation of the application storage configuration.
-	Storage interface {
-		GetPostgres() *postgres
-		GetCache() *cache
-	}
-	// Postgres describes the implementation of the PostgreSQL storage configuration.
-	Postgres interface {
-		GetDSN() string
-		GetMigrateURL() string
-	}
-	// Cache describes the implementation of the in-memory storage configuration.
-	Cache interface {
-		GetFilePath() string
-	}
-	// Swagger describes the implementation of th Swagger configuration.
-	Swagger interface {
-		GetTitle() string
-		GetDescription() string
-		GetHost() string
-		GetBasePath() string
-		GetSchemes() []string
-	}
-	// config implements application configuration.
-	config struct {
-		http     *http
-		shortURL *shortURL
-		storage  *storage
-	}
-	// http implements http server configuration.
-	http struct {
-		Scheme        string   `env:"SERVER_SCHEME" envDefault:"http"`
-		Address       string   `env:"SERVER_ADDRESS" envDefault:"127.0.0.1:8080"`
-		CompressTypes []string `env:"HTTP_COMPRESS_TYPES" envDefault:"text/plain,application/json" envSeparator:","`
-		CompressLevel int      `env:"HTTP_COMPRESS_LEVEL" envDefault:"5"`
-		cookie        *cookie
-		SecretKey     string `env:"HTTP_SECRET_KEY" envDefault:"secret"`
-		swagger       *swagger
-	}
-	// cookie implements http server cookies configuration.
-	cookie struct {
-		SignID    string `env:"COOKIE_SIGN_ID" envDefault:"user_id"`
-		SecretKey string `env:"COOKIE_SECRET_KEY" envDefault:"secret_key"`
-	}
-	// shortURL implements shortener configuration.
-	shortURL struct {
-		BaseURL           *url.URL      `env:"BASE_URL" envDefault:"http://127.0.0.1:8080"`
-		CheckTaskInterval time.Duration `env:"CHECK_TASK_INTERVAL" envDefault:"5s"`
-		MaxTaskQueue      int           `env:"MAX_TASK_QUEUE" envDefault:"100"`
-	}
-	// storage implements storage configuration.
-	storage struct {
-		cache    *cache
-		postgres *postgres
-	}
-	// cache implements in-memory storage configuration.
-	cache struct {
-		FilePath string `env:"FILE_STORAGE_PATH" envDefault:"./storage.json"`
-	}
-	// postgres implements postgres configuration.
-	postgres struct {
-		DSN        string `env:"DATABASE_DSN"`
-		MigrateURL string `env:"MIGRATE_URL" envDefault:"file://migrations/postgres"`
-	}
-	// swagger implements swagger configuration.
-	swagger struct {
-		Title       string   `json:"title" env:"SWAGGER_TITLE" envDefault:"Shortener API"`
-		Description string   `json:"description" env:"SWAGGER_DESCRIPTION"`
-		Host        string   `json:"host" env:"SWAGGER_HOST" envDefault:"127.0.0.1:8080"`
-		BasePath    string   `json:"basePath" env:"SWAGGER_BASE_PATH"`
-		Schemes     []string `json:"schemes" env:"SWAGGER_SCHEMES" envSeparator:":" envDefault:"http"`
-	}
-)
+// Config describes the implementation of the application configuration.
+type Config interface {
+	HTTP() *http
+	ShortURL() *shortURL
+	Storage() *storage
+}
+
+// HTTP describes the implementation of the http server configuration.
+type HTTP interface {
+	GetScheme() string
+	GetAddress() string
+	GetCompressTypes() []string
+	GetCompressLevel() int
+	GetCookie() *cookie
+	GetSwagger() *swagger
+}
+
+// ShortURL describes the implementation of the URL shortening service configuration.
+type ShortURL interface {
+	GetBaseURL() *url.URL
+	GetCheckTaskInterval() time.Duration
+	GetMaxTaskQueue() int
+}
+
+// Storage describes the implementation of the application storage configuration.
+type Storage interface {
+	GetPostgres() *postgres
+	GetCache() *cache
+}
+
+// Postgres describes the implementation of the PostgreSQL storage configuration.
+type Postgres interface {
+	GetDSN() string
+	GetMigrateURL() string
+}
+
+// Cache describes the implementation of the in-memory storage configuration.
+type Cache interface {
+	GetFilePath() string
+}
+
+// Swagger describes the implementation of th Swagger configuration.
+type Swagger interface {
+	GetTitle() string
+	GetDescription() string
+	GetHost() string
+	GetBasePath() string
+	GetSchemes() []string
+}
+
+// config implements application configuration.
+type config struct {
+	http     *http
+	shortURL *shortURL
+	storage  *storage
+}
+
+// http implements http server configuration.
+type http struct {
+	Scheme        string   `env:"SERVER_SCHEME" envDefault:"http"`
+	Address       string   `env:"SERVER_ADDRESS" envDefault:"127.0.0.1:8080"`
+	CompressTypes []string `env:"HTTP_COMPRESS_TYPES" envDefault:"text/plain,application/json" envSeparator:","`
+	CompressLevel int      `env:"HTTP_COMPRESS_LEVEL" envDefault:"5"`
+	cookie        *cookie
+	SecretKey     string `env:"HTTP_SECRET_KEY" envDefault:"secret"`
+	swagger       *swagger
+}
+
+// cookie implements http server cookies configuration.
+type cookie struct {
+	SignID    string `env:"COOKIE_SIGN_ID" envDefault:"user_id"`
+	SecretKey string `env:"COOKIE_SECRET_KEY" envDefault:"secret_key"`
+}
+
+// shortURL implements shortener configuration.
+type shortURL struct {
+	BaseURL           *url.URL      `env:"BASE_URL" envDefault:"http://127.0.0.1:8080"`
+	CheckTaskInterval time.Duration `env:"CHECK_TASK_INTERVAL" envDefault:"5s"`
+	MaxTaskQueue      int           `env:"MAX_TASK_QUEUE" envDefault:"100"`
+}
+
+// storage implements storage configuration.
+type storage struct {
+	cache    *cache
+	postgres *postgres
+}
+
+// cache implements in-memory storage configuration.
+type cache struct {
+	FilePath string `env:"FILE_STORAGE_PATH" envDefault:"./storage.json"`
+}
+
+// postgres implements postgres configuration.
+type postgres struct {
+	DSN        string `env:"DATABASE_DSN"`
+	MigrateURL string `env:"MIGRATE_URL" envDefault:"file://migrations/postgres"`
+}
+
+// swagger implements swagger configuration.
+type swagger struct {
+	Title       string   `json:"title" env:"SWAGGER_TITLE" envDefault:"Shortener API"`
+	Description string   `json:"description" env:"SWAGGER_DESCRIPTION"`
+	Host        string   `json:"host" env:"SWAGGER_HOST" envDefault:"127.0.0.1:8080"`
+	BasePath    string   `json:"basePath" env:"SWAGGER_BASE_PATH"`
+	Schemes     []string `json:"schemes" env:"SWAGGER_SCHEMES" envSeparator:":" envDefault:"http"`
+}
 
 // HTTP implements getting http server configuration.
 func (c *config) HTTP() *http {

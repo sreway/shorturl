@@ -6,14 +6,14 @@ import (
 	"github.com/go-chi/render"
 )
 
-var (
-	// ErrInvalidRequest implements invalid http request error.
-	ErrInvalidRequest = errors.New("invalid request")
-	// ErrInternalServer implements internal server error.
-	ErrInternalServer = errors.New("internal server error")
-	// ErrStorageCheck implements storage check error.
-	ErrStorageCheck = errors.New("failed storage check")
-)
+// ErrInvalidRequest implements invalid http request error.
+var ErrInvalidRequest = errors.New("invalid request")
+
+// ErrInternalServer implements internal server error.
+var ErrInternalServer = errors.New("internal server error")
+
+// ErrStorageCheck implements storage check error.
+var ErrStorageCheck = errors.New("failed storage check")
 
 // errRender implements renderer interface for managing response payloads.
 func errRender(statusCode int, err error) render.Renderer {

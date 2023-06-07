@@ -1,0 +1,270 @@
+definitions:
+  http.batchURLRequest:
+    properties:
+      correlation_id:
+        type: string
+      original_url:
+        type: string
+    type: object
+  http.batchURLResponse:
+    properties:
+      correlation_id:
+        type: string
+      short_url:
+        type: string
+    type: object
+  http.errResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  http.shortURLRequest:
+    properties:
+      url:
+        type: string
+    type: object
+  http.shortURLResponse:
+    properties:
+      result:
+        type: string
+    type: object
+  http.userURLResponse:
+    properties:
+      original_url:
+        type: string
+      short_url:
+        type: string
+    type: object
+info:
+  contact:
+    email: a.y.oleynik@gmail.com
+    name: API Support
+paths:
+  /:
+    post:
+      description: add short URL
+      operationId: addURL
+      parameters:
+      - description: long URL to shorten
+        in: body
+        name: longURL
+        required: true
+        schema:
+          type: string
+      produces:
+      - text/plain
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.errResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/http.errResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.errResponse'
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/http.errResponse'
+      summary: add short URL
+  /{id}:
+    post:
+      description: get short URL
+      operationId: getURL
+      parameters:
+      - description: short URL id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.errResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http.errResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.errResponse'
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/http.errResponse'
+      summary: get short URL
+  /api/shorten:
+    post:
+      description: create short URL
+      operationId: shortURL
+      parameters:
+      - description: long URL to shorten
+        in: body
+        name: longURL
+        required: true
+        schema:
+          $ref: '#/definitions/http.shortURLRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/http.shortURLResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.errResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/http.errResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.errResponse'
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/http.errResponse'
+      summary: create short URL
+  /api/shorten/batch:
+    post:
+      description: create of several short URLs
+      operationId: batchURL
+      parameters:
+      - description: several long URLs to shorten
+        in: body
+        name: bathURL
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/http.batchURLRequest'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            items:
+              $ref: '#/definitions/http.batchURLResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.errResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/http.errResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.errResponse'
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/http.errResponse'
+      summary: create of several short URLs
+  /api/shorten/user/urls:
+    delete:
+      description: remove multiple short URLs
+      operationId: deleteURL
+      parameters:
+      - description: short URL ids to delete
+        in: body
+        name: ids
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.errResponse'
+        "410":
+          description: Gone
+          schema:
+            $ref: '#/definitions/http.errResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.errResponse'
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/http.errResponse'
+      summary: remove multiple short URLs
+    get:
+      description: get short URLs for user ID
+      operationId: userURL
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            items:
+              $ref: '#/definitions/http.userURLResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.errResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http.errResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.errResponse'
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/http.errResponse'
+      summary: get short URLs for user ID
+  /ping:
+    get:
+      description: health check shortener storage
+      operationId: ping
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.errResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.errResponse'
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/http.errResponse'
+      summary: health check shortener storage
+swagger: "2.0"

@@ -1,3 +1,4 @@
+// Package http implements and describes the http server of the application.
 package http
 
 import (
@@ -22,6 +23,7 @@ type (
 	}
 )
 
+// New implements http server initialization.
 func New(uc usecases.Shortener) *delivery {
 	log := slog.New(slog.NewJSONHandler(os.Stdout).
 		WithAttrs([]slog.Attr{slog.String("service", "http")}))
@@ -32,6 +34,7 @@ func New(uc usecases.Shortener) *delivery {
 	return d
 }
 
+// Run implements run http server.
 func (d *delivery) Run(ctx context.Context, config config.HTTP) error {
 	d.router = d.initRouter(config)
 	httpServer := &http.Server{

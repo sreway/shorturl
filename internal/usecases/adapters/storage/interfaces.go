@@ -1,3 +1,4 @@
+// Package storage describes a repositories used in the application.
 package storage
 
 import (
@@ -8,6 +9,8 @@ import (
 	entity "github.com/sreway/shorturl/internal/domain/url"
 )
 
+// URL describes the implementation of storage for storing short URLs.
+//
 //go:generate mockgen -source=./internal/usecases/adapters/storage/interfaces.go -destination=./internal/usecases/adapters/storage/mock/mock_url.go -package=storageMock
 type URL interface {
 	Add(ctx context.Context, url entity.URL) error

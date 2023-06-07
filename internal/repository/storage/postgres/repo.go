@@ -1,3 +1,4 @@
+// Package postgres implements a repository for storing short URLs in the PostgreSQL storage.
 package postgres
 
 import (
@@ -28,6 +29,7 @@ type repo struct {
 	logger *slog.Logger
 }
 
+// Ping implements health check storage.
 func (r *repo) Ping(ctx context.Context) error {
 	if err := r.pool.Ping(ctx); err != nil {
 		r.logger.Error("failed execute empty sql statement", err, slog.String("func", "Ping"))
@@ -36,6 +38,7 @@ func (r *repo) Ping(ctx context.Context) error {
 	return nil
 }
 
+// Add implements saving short URL.
 func (r *repo) Add(ctx context.Context, item entity.URL) error {
 	tx, err := r.pool.BeginTx(ctx, pgx.TxOptions{})
 	defer func() {
@@ -81,6 +84,7 @@ func (r *repo) Add(ctx context.Context, item entity.URL) error {
 	return tx.Commit(ctx)
 }
 
+// Get implements getting short URL.
 func (r *repo) Get(ctx context.Context, id uuid.UUID) (entity.URL, error) {
 	var (
 		userID  uuid.UUID
@@ -109,6 +113,7 @@ func (r *repo) Get(ctx context.Context, id uuid.UUID) (entity.URL, error) {
 	return u, nil
 }
 
+// GetByUserID implements getting short URLs for user ID.
 func (r *repo) GetByUserID(ctx context.Context, userID uuid.UUID) ([]entity.URL, error) {
 	urls := make([]entity.URL, 0)
 
@@ -143,11 +148,13 @@ func (r *repo) GetByUserID(ctx context.Context, userID uuid.UUID) ([]entity.URL,
 	return urls, nil
 }
 
+// Close implements closing the connection to the storage.
 func (r *repo) Close() error {
 	r.pool.Close()
 	return nil
 }
 
+// Batch implements saving multiple short URLs.
 func (r *repo) Batch(ctx context.Context, urls []entity.URL) error {
 	tx, err := r.pool.BeginTx(ctx, pgx.TxOptions{})
 	defer func() {
@@ -179,6 +186,7 @@ func (r *repo) Batch(ctx context.Context, urls []entity.URL) error {
 	return tx.Commit(ctx)
 }
 
+// BatchDelete implements the deletion multiple short URLs.
 func (r *repo) BatchDelete(ctx context.Context, urls []entity.URL) error {
 	tx, err := r.pool.BeginTx(ctx, pgx.TxOptions{})
 	defer func() {
@@ -201,6 +209,7 @@ func (r *repo) BatchDelete(ctx context.Context, urls []entity.URL) error {
 	return tx.Commit(ctx)
 }
 
+// migrate implements run migrations.
 func (r *repo) migrate(migrateURL string) error {
 	m, err := migrate.New(migrateURL, r.pool.Config().ConnConfig.ConnString())
 	defer func() {
@@ -219,6 +228,7 @@ func (r *repo) migrate(migrateURL string) error {
 	return err
 }
 
+// New implements the creation of storage.
 func New(ctx context.Context, config config.Postgres) (*repo, error) {
 	log := slog.New(slog.NewJSONHandler(os.Stdout).
 		WithAttrs([]slog.Attr{slog.String("repository", "postgres")}))

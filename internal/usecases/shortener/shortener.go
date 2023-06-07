@@ -1,3 +1,4 @@
+// Package shortener implements a URL shortening service.
 package shortener
 
 import (
@@ -23,6 +24,7 @@ type (
 	}
 )
 
+// CreateURL implements the creation of a short URL.
 func (uc *useCase) CreateURL(ctx context.Context, rawURL string, userID string) (entity.URL, error) {
 	longURL, err := url.ParseRequestURI(rawURL)
 	if err != nil {
@@ -73,6 +75,7 @@ func (uc *useCase) CreateURL(ctx context.Context, rawURL string, userID string) 
 	return addURL, nil
 }
 
+// GetURL implements getting short URL.
 func (uc *useCase) GetURL(ctx context.Context, urlID string) (entity.URL, error) {
 	decoded, err := decodeUUID(urlID)
 	if err != nil {
@@ -108,6 +111,7 @@ func (uc *useCase) GetURL(ctx context.Context, urlID string) (entity.URL, error)
 	return u, nil
 }
 
+// GetUserURLs implements getting short URLs for user ID.
 func (uc *useCase) GetUserURLs(ctx context.Context, userID string) ([]entity.URL, error) {
 	parsedUserID, err := uuid.Parse(userID)
 	if err != nil {
@@ -132,10 +136,12 @@ func (uc *useCase) GetUserURLs(ctx context.Context, userID string) ([]entity.URL
 	return urls, nil
 }
 
+// StorageCheck implements storage health check.
 func (uc *useCase) StorageCheck(ctx context.Context) error {
 	return uc.storage.Ping(ctx)
 }
 
+// BatchURL implements the creation of several short URLs.
 func (uc *useCase) BatchURL(ctx context.Context, correlationID, rawURL []string, userID string) ([]entity.URL, error) {
 	urls := []entity.URL{}
 
@@ -175,6 +181,7 @@ func (uc *useCase) BatchURL(ctx context.Context, correlationID, rawURL []string,
 	return urls, nil
 }
 
+// DeleteURL implements the deletion multiple short URLs.
 func (uc *useCase) DeleteURL(_ context.Context, userID string, urlID []string) error {
 	urls := []entity.URL{}
 	parsedUserID, err := uuid.ParseBytes([]byte(userID))
@@ -210,6 +217,7 @@ func (uc *useCase) DeleteURL(_ context.Context, userID string, urlID []string) e
 	return nil
 }
 
+// New implements the creation of a URL shortening service.
 func New(s storage.URL, cfg config.ShortURL) *useCase {
 	log := slog.New(slog.NewJSONHandler(os.Stdout).
 		WithAttrs([]slog.Attr{slog.String("service", "shortener")}))

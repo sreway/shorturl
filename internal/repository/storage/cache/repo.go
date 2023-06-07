@@ -1,3 +1,4 @@
+// Package cache implements a repository for storing short URLs in the in-memory storage.
 package cache
 
 import (
@@ -19,6 +20,7 @@ type repo struct {
 	mu      sync.RWMutex
 }
 
+// Add implements saving short URL.
 func (r *repo) Add(ctx context.Context, item entity.URL) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -32,6 +34,7 @@ func (r *repo) Add(ctx context.Context, item entity.URL) error {
 	return nil
 }
 
+// Get implements getting short URL.
 func (r *repo) Get(_ context.Context, id uuid.UUID) (entity.URL, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -47,6 +50,7 @@ func (r *repo) Get(_ context.Context, id uuid.UUID) (entity.URL, error) {
 	return u, nil
 }
 
+// GetByUserID implements getting short URLs for user ID.
 func (r *repo) GetByUserID(_ context.Context, userID uuid.UUID) ([]entity.URL, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -64,6 +68,7 @@ func (r *repo) GetByUserID(_ context.Context, userID uuid.UUID) ([]entity.URL, e
 	return result, nil
 }
 
+// Close implements closing the connection to the file storage.
 func (r *repo) Close() error {
 	if !r.fileUse {
 		return nil
@@ -78,10 +83,12 @@ func (r *repo) Close() error {
 	return nil
 }
 
+// Ping implements health check storage.
 func (r *repo) Ping(_ context.Context) error {
 	return ErrInvalidStorageType
 }
 
+// Batch implements saving multiple short URLs.
 func (r *repo) Batch(_ context.Context, urls []entity.URL) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -95,6 +102,7 @@ func (r *repo) Batch(_ context.Context, urls []entity.URL) error {
 	return nil
 }
 
+// BatchDelete implements the deletion multiple short URLs.
 func (r *repo) BatchDelete(_ context.Context, urls []entity.URL) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -112,6 +120,7 @@ func (r *repo) BatchDelete(_ context.Context, urls []entity.URL) error {
 	return nil
 }
 
+// New implements the creation of storage.
 func New(opts ...Option) *repo {
 	log := slog.New(slog.NewJSONHandler(os.Stdout).
 		WithAttrs([]slog.Attr{slog.String("repository", "cache")}))

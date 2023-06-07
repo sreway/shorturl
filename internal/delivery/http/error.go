@@ -1,13 +1,25 @@
 package http
 
-import "errors"
+import (
+	"errors"
 
-var (
-	ErrReadBody       = errors.New("read body error")
-	ErrEmptyBody      = errors.New("empty body")
-	ErrWriteBody      = errors.New("write body error")
-	ErrInvalidSlug    = errors.New("invalid slug")
-	ErrDecodeBody     = errors.New("failed decode body")
-	ErrInvalidRequest = errors.New("invalid url request")
-	ErrStorageCheck   = errors.New("failed storage check")
+	"github.com/go-chi/render"
 )
+
+// ErrInvalidRequest implements invalid http request error.
+var ErrInvalidRequest = errors.New("invalid request")
+
+// ErrInternalServer implements internal server error.
+var ErrInternalServer = errors.New("internal server error")
+
+// ErrStorageCheck implements storage check error.
+var ErrStorageCheck = errors.New("failed storage check")
+
+// errRender implements renderer interface for managing response payloads.
+func errRender(statusCode int, err error) render.Renderer {
+	return &errResponse{
+		Err:            err,
+		HTTPStatusCode: statusCode,
+		ErrorText:      err.Error(),
+	}
+}

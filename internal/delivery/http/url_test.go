@@ -705,3 +705,92 @@ func Test_delivery_ping(t *testing.T) {
 		})
 	}
 }
+
+func Test_delivery_deleteURL(t *testing.T) {
+	type want struct {
+		code     int
+		response string
+	}
+	type args struct {
+		body string
+	}
+	type fields struct {
+		useCaseErr error
+	}
+
+	uri := "/api/user/urls"
+	method := http.MethodDelete
+
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   want
+	}{
+		{
+			name: "positive delete url",
+			args: args{
+				body: `["2ZrI5IHFnvPscPYKlxFtRQ"]`,
+			},
+			want: want{
+				code: http.StatusAccepted,
+			},
+		},
+		{
+			name: "negative delete url (invalid body)",
+			args: args{
+				body: `invalid`,
+			},
+			want: want{
+				code:     http.StatusBadRequest,
+				response: "{\"error\":\"invalid request\"}\n",
+			},
+		},
+		{
+			name: "negative delete url (invalid url id, not uuid)",
+			args: args{
+				body: `["2ZrI5IHFnvPscPYKlxFtRQs"]`,
+			},
+			fields: fields{useCaseErr: shortener.ErrParseUUID},
+			want: want{
+				code:     http.StatusBadRequest,
+				response: "{\"error\":\"UUID parsing error\"}\n",
+			},
+		},
+		{
+			name: "negative delete url (already deleted)",
+			args: args{
+				body: `["2ZrI5IHFnvPscPYKlxFtRQ"]`,
+			},
+			fields: fields{useCaseErr: url.ErrDeleted},
+			want: want{
+				code:     http.StatusGone,
+				response: "{\"error\":\"URL deleted\"}\n",
+			},
+		},
+	}
+
+	anyMock := gomock.Any()
+	userID := uuid.New().String()
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	for _, tt := range tests {
+		uc := usecasesMock.NewMockShortener(ctl)
+		uc.EXPECT().DeleteURL(anyMock, anyMock, anyMock).Return(tt.fields.useCaseErr).AnyTimes()
+		d := New(uc)
+		t.Run(tt.name, func(t *testing.T) {
+			request := httptest.NewRequest(method, uri, strings.NewReader(tt.args.body))
+			request = request.WithContext(context.WithValue(request.Context(), ctxKeyUserID{}, userID))
+			w := httptest.NewRecorder()
+			h := http.HandlerFunc(d.deleteURL)
+			h.ServeHTTP(w, request)
+			resp := w.Result()
+			defer resp.Body.Close()
+			assert.Equal(t, tt.want.code, resp.StatusCode)
+			resBody, err := io.ReadAll(resp.Body)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want.response, string(resBody))
+		})
+	}
+}

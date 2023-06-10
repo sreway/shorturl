@@ -3,10 +3,22 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 
 	"github.com/sreway/shorturl/internal/app"
 )
+
+var (
+	buildVersion = "N/A"
+	buildDate    = "N/A"
+	buildCommit  = "N/A"
+)
+
+func buildInfo() {
+	fmt.Printf("Build version: %s\nBuild date: %s\nBuild commit: %s\n",
+		buildVersion, buildDate, buildCommit)
+}
 
 func init() {
 	var (
@@ -19,6 +31,7 @@ func init() {
 		}
 	)
 
+	buildInfo()
 	flag.StringVar(&httpServerAddress, "a", httpServerAddress,
 		"http server address: scheme:host:port")
 	flag.StringVar(&shortenBaseURL, "b", shortenBaseURL, "shorten base url")

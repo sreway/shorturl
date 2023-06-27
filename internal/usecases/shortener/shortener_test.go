@@ -78,7 +78,7 @@ func Test_useCase_CreateURL(t *testing.T) {
 		cfg, err := config.NewConfig()
 		assert.NoError(t, err)
 		repo := repoMock.NewMockURL(ctl)
-		uc := New(repo, cfg.ShortURL())
+		uc := New(repo, cfg.GetShortURL())
 
 		repo.EXPECT().Add(anyMock, anyMock).Return(tt.fields.repoErr).AnyTimes()
 		t.Run(tt.name, func(t *testing.T) {
@@ -169,7 +169,7 @@ func Test_useCase_GetURL(t *testing.T) {
 		cfg, err := config.NewConfig()
 		assert.NoError(t, err)
 		repo := repoMock.NewMockURL(ctl)
-		uc := New(repo, cfg.ShortURL())
+		uc := New(repo, cfg.GetShortURL())
 		mockURL := urlMock.NewMockURL(ctl)
 		mockURL.EXPECT().Deleted().Return(tt.args.deleted).AnyTimes()
 		mockURL.EXPECT().SetShortURL(anyMock).AnyTimes()
@@ -236,7 +236,7 @@ func Test_useCase_GetUserURLs(t *testing.T) {
 		cfg, err := config.NewConfig()
 		assert.NoError(t, err)
 		repo := repoMock.NewMockURL(ctl)
-		uc := New(repo, cfg.ShortURL())
+		uc := New(repo, cfg.GetShortURL())
 		urls := []url.URL{}
 		mockURL := urlMock.NewMockURL(ctl)
 		mockURL.EXPECT().SetShortURL(anyMock).AnyTimes()
@@ -283,7 +283,7 @@ func Test_useCase_StorageCheck(t *testing.T) {
 		cfg, err := config.NewConfig()
 		assert.NoError(t, err)
 		repo := repoMock.NewMockURL(ctl)
-		uc := New(repo, cfg.ShortURL())
+		uc := New(repo, cfg.GetShortURL())
 		repo.EXPECT().Ping(anyMock).Return(tt.fields.repoErr).AnyTimes()
 		t.Run(tt.name, func(t *testing.T) {
 			err = uc.StorageCheck(ctx)
@@ -377,7 +377,7 @@ func Test_useCase_BatchURL(t *testing.T) {
 		cfg, err := config.NewConfig()
 		assert.NoError(t, err)
 		repo := repoMock.NewMockURL(ctl)
-		uc := New(repo, cfg.ShortURL())
+		uc := New(repo, cfg.GetShortURL())
 		repo.EXPECT().Batch(anyMock, anyMock).Return(tt.fields.repoErr).AnyTimes()
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := uc.BatchURL(ctx, tt.args.correlationID, tt.args.rawURL, tt.args.userID)
@@ -449,7 +449,7 @@ func Test_useCase_DeleteURL(t *testing.T) {
 		cfg, err := config.NewConfig()
 		assert.NoError(t, err)
 		repo := repoMock.NewMockURL(ctl)
-		uc := New(repo, cfg.ShortURL())
+		uc := New(repo, cfg.GetShortURL())
 		t.Run(tt.name, func(t *testing.T) {
 			err = uc.DeleteURL(ctx, tt.args.userID, tt.args.urlID)
 			if !tt.wantErr(t, err, fmt.Sprintf("DeleteURL(%v)", tt.args.urlID)) {

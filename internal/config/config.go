@@ -2,7 +2,10 @@
 package config
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/caarlos0/env/v7"
@@ -10,9 +13,9 @@ import (
 
 // Config describes the implementation of the application configuration.
 type Config interface {
-	HTTP() *http
-	ShortURL() *shortURL
-	Storage() *storage
+	GetHTTP() *http
+	GetShortURL() *shortURL
+	GetStorage() *storage
 }
 
 // HTTP describes the implementation of the http server configuration.
@@ -61,82 +64,81 @@ type Swagger interface {
 
 // config implements application configuration.
 type config struct {
-	http     *http
-	shortURL *shortURL
-	storage  *storage
+	HTTP     *http     `json:"http"`
+	ShortURL *shortURL `json:"short_url"`
+	Storage  *storage  `json:"storage"`
 }
 
 // http implements http server configuration.
 type http struct {
-	Scheme        string   `env:"SERVER_SCHEME"`
-	Address       string   `env:"SERVER_ADDRESS" envDefault:"127.0.0.1:8080"`
-	CompressTypes []string `env:"HTTP_COMPRESS_TYPES" envDefault:"text/plain,application/json" envSeparator:","`
-	CompressLevel int      `env:"HTTP_COMPRESS_LEVEL" envDefault:"5"`
-	cookie        *cookie
-	tls           *tls
-	SecretKey     string `env:"HTTP_SECRET_KEY" envDefault:"secret"`
-	EnableHTTPS   bool   `env:"ENABLE_HTTPS" envDefault:"false"`
-	swagger       *swagger
+	Scheme        string   `json:"scheme" env:"SERVER_SCHEME"`
+	Address       string   `json:"server_address" env:"SERVER_ADDRESS"`
+	CompressTypes []string `json:"compress_types" env:"HTTP_COMPRESS_TYPES" envSeparator:","`
+	CompressLevel int      `json:"compress_level" env:"HTTP_COMPRESS_LEVEL"`
+	EnableHTTPS   bool     `json:"enable_https" env:"ENABLE_HTTPS"`
+	Cookie        *cookie  `json:"cookie"`
+	TLS           *tls     `json:"tls"`
+	Swagger       *swagger `json:"swagger"`
 }
 
 // cookie implements http server cookies configuration.
 type cookie struct {
-	SignID    string `env:"COOKIE_SIGN_ID" envDefault:"user_id"`
-	SecretKey string `env:"COOKIE_SECRET_KEY" envDefault:"secret_key"`
+	SignID    string `json:"sign_id" env:"COOKIE_SIGN_ID"`
+	SecretKey string `json:"secret_key" env:"COOKIE_SECRET_KEY"`
 }
 
 // tls implements http server tls configuration.
 type tls struct {
-	CertPath string `env:"TLS_CERT_PATH" envDefault:"certs/server.crt"`
-	KeyPath  string `env:"TLS_KET_PATH" envDefault:"certs/server.key"`
+	CertPath string `json:"cert_path" env:"TLS_CERT_PATH"`
+	KeyPath  string `json:"key_path" env:"TLS_KET_PATH"`
 }
 
 // shortURL implements shortener configuration.
 type shortURL struct {
-	BaseURL           *url.URL      `env:"BASE_URL"`
-	CheckTaskInterval time.Duration `env:"CHECK_TASK_INTERVAL" envDefault:"5s"`
-	MaxTaskQueue      int           `env:"MAX_TASK_QUEUE" envDefault:"100"`
+	BaseURL           *url.URL      `json:"base_url" env:"BASE_URL"`
+	CheckTaskInterval time.Duration `json:"check_task_interval" env:"CHECK_TASK_INTERVAL"`
+	MaxTaskQueue      int           `json:"max_task_queue" env:"MAX_TASK_QUEUE"`
 }
 
 // storage implements storage configuration.
 type storage struct {
-	cache    *cache
-	postgres *postgres
+	Cache    *cache    `json:"cache"`
+	Postgres *postgres `json:"postgres"`
 }
 
 // cache implements in-memory storage configuration.
 type cache struct {
-	FilePath string `env:"FILE_STORAGE_PATH" envDefault:"./storage.json"`
+	FilePath string `json:"file_path" env:"FILE_STORAGE_PATH"`
 }
 
 // postgres implements postgres configuration.
 type postgres struct {
-	DSN        string `env:"DATABASE_DSN"`
-	MigrateURL string `env:"MIGRATE_URL" envDefault:"file://migrations/postgres"`
+	DSN        string `json:"dsn" env:"DATABASE_DSN"`
+	MigrateURL string `json:"migrate_url" env:"MIGRATE_URL"`
 }
 
 // swagger implements swagger configuration.
 type swagger struct {
-	Title       string   `json:"title" env:"SWAGGER_TITLE" envDefault:"Shortener API"`
+	Title       string   `json:"title" env:"SWAGGER_TITLE"`
 	Description string   `json:"description" env:"SWAGGER_DESCRIPTION"`
-	Host        string   `json:"host" env:"SWAGGER_HOST" envDefault:"127.0.0.1:8080"`
+	Host        string   `json:"host" env:"SWAGGER_HOST"`
 	BasePath    string   `json:"basePath" env:"SWAGGER_BASE_PATH"`
-	Schemes     []string `json:"schemes" env:"SWAGGER_SCHEMES" envSeparator:":" envDefault:"http"`
+	Schemes     []string `json:"schemes" env:"SWAGGER_SCHEMES" envSeparator:":"`
 }
 
-// HTTP implements getting http server configuration.
-func (c *config) HTTP() *http {
-	return c.http
+// GetHTTP implements getting http server configuration.
+func (c *config) GetHTTP() *http {
+	return c.HTTP
 }
 
-// ShortURL implements getting URL shortening service configuration.
-func (c *config) ShortURL() *shortURL {
-	return c.shortURL
+// GetShortURL implements getting URL shortening service configuration.
+func (c *config) GetShortURL() *shortURL {
+	return c.ShortURL
 }
 
-// Storage implements getting storage configuration.
-func (c *config) Storage() *storage {
-	return c.storage
+// GetStorage implements getting storage configuration.
+func (c *config) GetStorage() *storage {
+	return c.Storage
 }
 
 // GetScheme implements getting http server scheme (http/https).
@@ -156,12 +158,12 @@ func (h *http) GetCompressTypes() []string {
 
 // GetCookie implements getting http server cookie configuration.
 func (h *http) GetCookie() *cookie {
-	return h.cookie
+	return h.Cookie
 }
 
 // GetTLS implements getting http server tls configuration.
 func (h *http) GetTLS() *tls {
-	return h.tls
+	return h.TLS
 }
 
 // GetCompressLevel implements getting http server compression level.
@@ -171,7 +173,7 @@ func (h *http) GetCompressLevel() int {
 
 // GetSwagger implements getting Swagger configuration.
 func (h *http) GetSwagger() *swagger {
-	return h.swagger
+	return h.Swagger
 }
 
 // GetBaseURL implements getting the base URL for the URL shortening service.
@@ -189,14 +191,14 @@ func (s *shortURL) GetCheckTaskInterval() time.Duration {
 	return s.CheckTaskInterval
 }
 
-// Cache implements getting in-memory storage configuration.
-func (store *storage) Cache() *cache {
-	return store.cache
+// GetCache implements getting in-memory storage configuration.
+func (store *storage) GetCache() *cache {
+	return store.Cache
 }
 
-// Postgres implements getting PostgreSQL storage configuration.
-func (store *storage) Postgres() *postgres {
-	return store.postgres
+// GetPostgres implements getting PostgreSQL storage configuration.
+func (store *storage) GetPostgres() *postgres {
+	return store.Postgres
 }
 
 // GetFilePath implements getting the file path for the in-memory storage.
@@ -241,50 +243,69 @@ func (s *swagger) GetSchemes() []string {
 
 // NewConfig implements the creation of the application configuration.
 func NewConfig() (*config, error) {
-	cfg := new(config)
-	cfg.shortURL = new(shortURL)
-	cfg.http = new(http)
-	cfg.http.cookie = new(cookie)
-	cfg.http.swagger = new(swagger)
-	cfg.http.tls = new(tls)
-	cfg.storage = new(storage)
-	cfg.storage.cache = new(cache)
-	cfg.storage.postgres = new(postgres)
+	cfg := defaultConfig()
+	jsonConfigPath := os.Getenv("CONFIG")
+	if len(jsonConfigPath) > 0 {
+		fileObj, err := os.Open(jsonConfigPath)
+		if err != nil {
+			return nil, err
+		}
+		defer fileObj.Close()
+		if err = json.NewDecoder(fileObj).Decode(cfg); err != nil {
+			return nil, err
+		}
+	}
 
-	if err := env.Parse(cfg.http); err != nil {
+	if err := env.Parse(cfg); err != nil {
 		return nil, err
 	}
 
-	if err := env.Parse(cfg.shortURL); err != nil {
-		return nil, err
-	}
-
-	if err := env.Parse(cfg.storage.cache); err != nil {
-		return nil, err
-	}
-
-	if err := env.Parse(cfg.storage.postgres); err != nil {
-		return nil, err
-	}
-
-	if err := env.Parse(cfg.http.cookie); err != nil {
-		return nil, err
-	}
-
-	if err := env.Parse(cfg.http.swagger); err != nil {
-		return nil, err
-	}
-
-	if err := env.Parse(cfg.http.tls); err != nil {
-		return nil, err
-	}
-
-	if cfg.http.EnableHTTPS {
-		cfg.http.Scheme = "https"
+	if cfg.HTTP.EnableHTTPS {
+		cfg.HTTP.Scheme = "https"
 	} else {
-		cfg.http.Scheme = "http"
+		cfg.HTTP.Scheme = "http"
 	}
 
-	cfg.shortURL.BaseURL = &url.URL{Scheme: cfg.http.Scheme, Host: cfg.http.Address}
+	cfg.ShortURL.BaseURL = &url.URL{Scheme: cfg.HTTP.Scheme, Host: cfg.HTTP.Address}
+	cfg.HTTP.Swagger.Host = fmt.Sprintf("%s://%s", cfg.HTTP.Scheme, cfg.HTTP.Address)
+	cfg.HTTP.Swagger.Schemes = append(cfg.HTTP.Swagger.Schemes, cfg.HTTP.Scheme)
 	return cfg, nil
+}
+
+// defaultConfig implements create application configuration with default values.
+func defaultConfig() *config {
+	return &config{
+		HTTP: &http{
+			Scheme:  "http",
+			Address: "127.0.0.1:8080",
+			CompressTypes: []string{
+				"text/plain", "application/json",
+			},
+			CompressLevel: 5,
+			EnableHTTPS:   false,
+			TLS: &tls{
+				CertPath: "./certs/server.crt",
+				KeyPath:  "./certs/server.key",
+			},
+			Cookie: &cookie{
+				SignID:    "user_id",
+				SecretKey: "secret_key",
+			},
+			Swagger: &swagger{
+				Title: "Shortener API",
+			},
+		},
+		Storage: &storage{
+			Cache: &cache{
+				FilePath: "./storage.json",
+			},
+			Postgres: &postgres{
+				MigrateURL: "file://migrations/postgres",
+			},
+		},
+		ShortURL: &shortURL{
+			CheckTaskInterval: 5 * time.Second,
+			MaxTaskQueue:      100,
+		},
+	}
 }

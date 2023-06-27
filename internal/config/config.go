@@ -23,6 +23,7 @@ type HTTP interface {
 	GetCompressLevel() int
 	GetCookie() *cookie
 	GetSwagger() *swagger
+	GetTLS() *tls
 }
 
 // ShortURL describes the implementation of the URL shortening service configuration.
@@ -67,12 +68,14 @@ type config struct {
 
 // http implements http server configuration.
 type http struct {
-	Scheme        string   `env:"SERVER_SCHEME" envDefault:"http"`
+	Scheme        string   `env:"SERVER_SCHEME"`
 	Address       string   `env:"SERVER_ADDRESS" envDefault:"127.0.0.1:8080"`
 	CompressTypes []string `env:"HTTP_COMPRESS_TYPES" envDefault:"text/plain,application/json" envSeparator:","`
 	CompressLevel int      `env:"HTTP_COMPRESS_LEVEL" envDefault:"5"`
 	cookie        *cookie
+	tls           *tls
 	SecretKey     string `env:"HTTP_SECRET_KEY" envDefault:"secret"`
+	EnableHTTPS   bool   `env:"ENABLE_HTTPS" envDefault:"false"`
 	swagger       *swagger
 }
 
@@ -82,9 +85,15 @@ type cookie struct {
 	SecretKey string `env:"COOKIE_SECRET_KEY" envDefault:"secret_key"`
 }
 
+// tls implements http server tls configuration.
+type tls struct {
+	CertPath string `env:"TLS_CERT_PATH" envDefault:"certs/server.crt"`
+	KeyPath  string `env:"TLS_KET_PATH" envDefault:"certs/server.key"`
+}
+
 // shortURL implements shortener configuration.
 type shortURL struct {
-	BaseURL           *url.URL      `env:"BASE_URL" envDefault:"http://127.0.0.1:8080"`
+	BaseURL           *url.URL      `env:"BASE_URL"`
 	CheckTaskInterval time.Duration `env:"CHECK_TASK_INTERVAL" envDefault:"5s"`
 	MaxTaskQueue      int           `env:"MAX_TASK_QUEUE" envDefault:"100"`
 }
@@ -148,6 +157,11 @@ func (h *http) GetCompressTypes() []string {
 // GetCookie implements getting http server cookie configuration.
 func (h *http) GetCookie() *cookie {
 	return h.cookie
+}
+
+// GetTLS implements getting http server tls configuration.
+func (h *http) GetTLS() *tls {
+	return h.tls
 }
 
 // GetCompressLevel implements getting http server compression level.
@@ -232,6 +246,7 @@ func NewConfig() (*config, error) {
 	cfg.http = new(http)
 	cfg.http.cookie = new(cookie)
 	cfg.http.swagger = new(swagger)
+	cfg.http.tls = new(tls)
 	cfg.storage = new(storage)
 	cfg.storage.cache = new(cache)
 	cfg.storage.postgres = new(postgres)
@@ -260,5 +275,16 @@ func NewConfig() (*config, error) {
 		return nil, err
 	}
 
+	if err := env.Parse(cfg.http.tls); err != nil {
+		return nil, err
+	}
+
+	if cfg.http.EnableHTTPS {
+		cfg.http.Scheme = "https"
+	} else {
+		cfg.http.Scheme = "http"
+	}
+
+	cfg.shortURL.BaseURL = &url.URL{Scheme: cfg.http.Scheme, Host: cfg.http.Address}
 	return cfg, nil
 }

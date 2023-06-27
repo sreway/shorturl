@@ -36,6 +36,7 @@ func New(uc usecases.Shortener) *delivery {
 
 // Run implements run http server.
 func (d *delivery) Run(ctx context.Context, config config.HTTP) error {
+	var err error
 	d.router = d.initRouter(config)
 	httpServer := &http.Server{
 		Addr:    config.GetAddress(),
@@ -48,14 +49,21 @@ func (d *delivery) Run(ctx context.Context, config config.HTTP) error {
 	go func() {
 		<-ctx.Done()
 		d.logger.Info("trigger graceful shutdown http server")
-		err := httpServer.Shutdown(ctxServer)
+		err = httpServer.Shutdown(ctxServer)
 		if err != nil {
 			d.logger.Error("shutdown http server", err)
 		}
 		stopServer()
 	}()
 	d.logger.Info("http service is ready to listen and serv")
-	err := httpServer.ListenAndServe()
+
+	if config.GetScheme() == "https" {
+		tlsCfg := config.GetTLS()
+		err = httpServer.ListenAndServeTLS(tlsCfg.CertPath, tlsCfg.KeyPath)
+	} else {
+		err = httpServer.ListenAndServe()
+	}
+
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}

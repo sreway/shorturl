@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/sreway/shorturl/internal/app"
 )
@@ -23,11 +24,13 @@ func buildInfo() {
 func init() {
 	var (
 		httpServerAddress  string
+		enableHTTPS        bool
 		shortenBaseURL     string
 		storageCachePath   string
 		storagePostgresDSN string
+		jsonConfig         string
 		lookupEnv          = []string{
-			"BASE_URL", "SERVER_ADDRESS", "FILE_STORAGE_PATH", "DATABASE_DSN",
+			"BASE_URL", "SERVER_ADDRESS", "FILE_STORAGE_PATH", "DATABASE_DSN", "ENABLE_HTTPS", "CONFIG",
 		}
 	)
 
@@ -37,6 +40,8 @@ func init() {
 	flag.StringVar(&shortenBaseURL, "b", shortenBaseURL, "shorten base url")
 	flag.StringVar(&storageCachePath, "f", storageCachePath, "storage cache file path")
 	flag.StringVar(&storagePostgresDSN, "d", storagePostgresDSN, "storage postgres dsn")
+	flag.BoolVar(&enableHTTPS, "s", false, "enable https")
+	flag.StringVar(&jsonConfig, "c", jsonConfig, "json config file path")
 	flag.Parse()
 
 	for _, env := range lookupEnv {
@@ -54,6 +59,10 @@ func init() {
 			_ = os.Setenv(env, storageCachePath)
 		case "DATABASE_DSN":
 			_ = os.Setenv(env, storagePostgresDSN)
+		case "ENABLE_HTTPS":
+			_ = os.Setenv(env, strconv.FormatBool(enableHTTPS))
+		case "CONFIG":
+			_ = os.Setenv(env, jsonConfig)
 		}
 	}
 }

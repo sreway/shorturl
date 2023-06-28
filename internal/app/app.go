@@ -59,9 +59,9 @@ func Run(ctx context.Context) {
 			return
 		}
 
-		configCache = cfg.Storage().Cache()
-		configPostgres = cfg.Storage().Postgres()
-		configShortURL = cfg.ShortURL()
+		configCache = cfg.GetStorage().GetCache()
+		configPostgres = cfg.GetStorage().GetPostgres()
+		configShortURL = cfg.GetShortURL()
 
 		switch {
 		case len(configPostgres.GetDSN()) > 0:
@@ -91,7 +91,7 @@ func Run(ctx context.Context) {
 		srv := http.New(service)
 
 		go func() {
-			err = service.ProcQueue(ctx, cfg.ShortURL().GetCheckTaskInterval())
+			err = service.ProcQueue(ctx, cfg.GetShortURL().GetCheckTaskInterval())
 			if err != nil {
 				log.Error("failed processed task queue", err)
 				stop()
@@ -100,7 +100,7 @@ func Run(ctx context.Context) {
 			}
 		}()
 
-		err = srv.Run(ctx, cfg.HTTP())
+		err = srv.Run(ctx, cfg.GetHTTP())
 		if err != nil {
 			log.Error("failed run delivery", err)
 			stop()

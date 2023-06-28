@@ -50,9 +50,9 @@ func Test_delivery_Run1(t *testing.T) {
 
 			repo := mockStorage.NewMockURL(ctl)
 
-			uc := shortener.New(repo, cfg.ShortURL())
+			uc := shortener.New(repo, cfg.GetShortURL())
 			d := New(uc)
-			tt.wantErr(t, d.Run(tt.args.ctx, cfg.HTTP()), fmt.Sprintf("Run(%v, %v)", tt.args.ctx, cfg))
+			tt.wantErr(t, d.Run(tt.args.ctx, cfg.GetHTTP()), fmt.Sprintf("Run(%v, %v)", tt.args.ctx, cfg))
 
 			for k := range tt.args.env {
 				err = os.Unsetenv(k)

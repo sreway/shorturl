@@ -4,6 +4,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/url"
 	"os"
 	"time"
@@ -27,6 +28,7 @@ type HTTP interface {
 	GetCookie() *cookie
 	GetSwagger() *swagger
 	GetTLS() *tls
+	GetTrustedSubnet() *net.IPNet
 }
 
 // ShortURL describes the implementation of the URL shortening service configuration.
@@ -79,6 +81,26 @@ type http struct {
 	Cookie        *cookie  `json:"cookie"`
 	TLS           *tls     `json:"tls"`
 	Swagger       *swagger `json:"swagger"`
+	TrustedSubnet *subnet  `json:"trusted_subnet" env:"TRUSTED_SUBNET"`
+}
+
+// subnet describes ip subnet type.
+type subnet net.IPNet
+
+func (s *subnet) UnmarshalText(text []byte) error {
+	if len(text) == 0 {
+		*s = subnet(net.IPNet{})
+		return nil
+	}
+
+	_, p, err := net.ParseCIDR(string(text))
+	if err != nil {
+		return err
+	}
+
+	*s = subnet(*p)
+
+	return nil
 }
 
 // cookie implements http server cookies configuration.
@@ -174,6 +196,11 @@ func (h *http) GetCompressLevel() int {
 // GetSwagger implements getting Swagger configuration.
 func (h *http) GetSwagger() *swagger {
 	return h.Swagger
+}
+
+// GetTrustedSubnet implements getting trusted subnet.
+func (h *http) GetTrustedSubnet() *net.IPNet {
+	return (*net.IPNet)(h.TrustedSubnet)
 }
 
 // GetBaseURL implements getting the base URL for the URL shortening service.

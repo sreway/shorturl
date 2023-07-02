@@ -87,6 +87,7 @@ type http struct {
 // subnet describes ip subnet type.
 type subnet net.IPNet
 
+// UnmarshalText implements custom unmarshal subnet data.
 func (s *subnet) UnmarshalText(text []byte) error {
 	if len(text) == 0 {
 		*s = subnet(net.IPNet{})

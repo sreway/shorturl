@@ -367,6 +367,7 @@ func (d *delivery) ping(w http.ResponseWriter, r *http.Request) {
 // @Summary shorturl statistics
 // @Description shorturl statistics
 // @ID stats
+// @Produce application/json
 // @Success 200
 // @Failure 400 {object} errResponse
 // @Failure 403 {object} errResponse

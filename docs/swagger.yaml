@@ -251,6 +251,8 @@ paths:
     get:
       description: shorturl statistics
       operationId: stats
+      produces:
+      - application/json
       responses:
         "200":
           description: OK

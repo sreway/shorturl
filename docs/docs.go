@@ -283,6 +283,9 @@ const docTemplate = `{
         "/internal/stats": {
             "get": {
                 "description": "shorturl statistics",
+                "produces": [
+                    "application/json"
+                ],
                 "summary": "shorturl statistics",
                 "operationId": "stats",
                 "responses": {

@@ -3,10 +3,12 @@ package http
 import (
 	"compress/gzip"
 	"context"
+	"net"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/render"
 	"github.com/google/uuid"
 
 	"github.com/sreway/shorturl/internal/config"
@@ -53,6 +55,43 @@ func signCookie(name string, secretKey string) func(next http.Handler) http.Hand
 			}
 			ctx := context.WithValue(r.Context(), ctxKeyUserID{}, val)
 			r = r.WithContext(ctx)
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// trustedSubnet implements validate trusted subnet middleware.
+func trustedSubnet(subnet *net.IPNet) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			var emptySubnet *net.IPNet
+
+			if subnet == emptySubnet {
+				err := render.Render(w, r, errRender(http.StatusForbidden, ErrTrustedSubnetNotSetup))
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+				}
+
+				return
+			}
+			rip := r.Header.Get("X-Real-IP")
+			if len(rip) == 0 {
+				err := render.Render(w, r, errRender(http.StatusForbidden, ErrEmptyRealIPHeader))
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+				}
+
+				return
+			}
+			ip := net.ParseIP(rip)
+			if !subnet.Contains(ip) {
+				err := render.Render(w, r, errRender(http.StatusForbidden, ErrIPNotAllowed))
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+				}
+
+				return
+			}
 			next.ServeHTTP(w, r)
 		})
 	}

@@ -120,6 +120,24 @@ func (r *repo) BatchDelete(_ context.Context, urls []entity.URL) error {
 	return nil
 }
 
+// GetUserCount implements the getting user count.
+func (r *repo) GetUserCount(_ context.Context) (int, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	users := map[uuid.UUID]struct{}{}
+	for _, v := range r.data {
+		users[v.UserID] = struct{}{}
+	}
+	return len(users), nil
+}
+
+// GetURLCount implements the getting url count.
+func (r *repo) GetURLCount(_ context.Context) (int, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return len(r.data), nil
+}
+
 // New implements the creation of storage.
 func New(opts ...Option) *repo {
 	log := slog.New(slog.NewJSONHandler(os.Stdout).

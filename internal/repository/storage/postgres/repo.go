@@ -209,6 +209,28 @@ func (r *repo) BatchDelete(ctx context.Context, urls []entity.URL) error {
 	return tx.Commit(ctx)
 }
 
+// GetUserCount implements the getting user count stat.
+func (r *repo) GetUserCount(ctx context.Context) (int, error) {
+	var counter int
+	query := "SELECT COUNT(DISTINCT user_id) FROM urls;"
+	err := r.pool.QueryRow(ctx, query).Scan(&counter)
+	if err != nil {
+		return 0, err
+	}
+	return counter, nil
+}
+
+// GetURLCount implements the getting url count stat.
+func (r *repo) GetURLCount(ctx context.Context) (int, error) {
+	var counter int
+	query := "SELECT COUNT(id) FROM urls;"
+	err := r.pool.QueryRow(ctx, query).Scan(&counter)
+	if err != nil {
+		return 0, err
+	}
+	return counter, nil
+}
+
 // migrate implements run migrations.
 func (r *repo) migrate(migrateURL string) error {
 	m, err := migrate.New(migrateURL, r.pool.Config().ConnConfig.ConnString())

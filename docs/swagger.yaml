@@ -247,6 +247,26 @@ paths:
           schema:
             $ref: '#/definitions/http.errResponse'
       summary: get short URLs for user ID
+  /internal/stats:
+    get:
+      description: shorturl statistics
+      operationId: stats
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.errResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http.errResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.errResponse'
+      summary: shorturl statistics
   /ping:
     get:
       description: health check shortener storage
@@ -260,10 +280,6 @@ paths:
             $ref: '#/definitions/http.errResponse'
         "500":
           description: Internal Server Error
-          schema:
-            $ref: '#/definitions/http.errResponse'
-        "501":
-          description: Not Implemented
           schema:
             $ref: '#/definitions/http.errResponse'
       summary: health check shortener storage

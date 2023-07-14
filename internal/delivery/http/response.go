@@ -18,6 +18,10 @@ type (
 		CorrelationID string `json:"correlation_id"`
 		ShortURL      string `json:"short_url"`
 	}
+	statsResponse struct {
+		URLs  int `json:"urls"`
+		Users int `json:"users"`
+	}
 	errResponse struct {
 		Err            error  `json:"-"`
 		HTTPStatusCode int    `json:"-"`

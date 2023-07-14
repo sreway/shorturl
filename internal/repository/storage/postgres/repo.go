@@ -4,7 +4,6 @@ package postgres
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/url"
 	"os"
 
@@ -142,7 +141,6 @@ func (r *repo) GetByUserID(ctx context.Context, userID uuid.UUID) ([]entity.URL,
 		u := entity.NewURL(id, userID)
 		u.SetLongURL(*value)
 		urls = append(urls, u)
-		fmt.Println(urls)
 	}
 
 	return urls, nil

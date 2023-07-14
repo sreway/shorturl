@@ -1,0 +1,71 @@
+syntax = "proto3";
+option go_package = "github.com/sreway/shorturl/v1";
+package shorturl;
+
+message URL {
+  string id = 1;
+  string userID = 2;
+  string longURL = 3;
+  string shortURL = 4;
+  string correlationID = 5;
+  bool deleted = 6;
+}
+
+message BatchURL {
+    string correlationID  = 1;
+    string originalURL = 2;
+}
+
+message AddURLRequest {
+  string url = 1;
+  string userID = 2;
+}
+
+message AddURLResponse {
+  URL url = 1;
+}
+
+message BatchAddURLRequest {
+  repeated BatchURL urls = 1;
+  string userID = 2;
+}
+
+message BatchAddURLResponse {
+  repeated URL url = 1;
+}
+
+message GetURLRequest {
+  string urlID = 1;
+}
+
+message GetURLResponse {
+  URL url = 1;
+}
+
+message GetUserURLRequest {
+  string userID = 1;
+}
+
+message GetUserURLResponse {
+  repeated URL url = 1;
+}
+
+message DeleteURLRequest {
+  string userID = 1;
+  repeated string urlID = 2;
+}
+
+message DeleteURLResponse {}
+
+message StorageCheckRequest {}
+message StorageCheckResponse {}
+
+service ShortURLService{
+  rpc CreateURL(AddURLRequest) returns (AddURLResponse);
+  rpc BatchURL(BatchAddURLRequest) returns (BatchAddURLResponse);
+  rpc GetURL(GetURLRequest) returns (GetURLResponse);
+  rpc GetUserURLs(GetUserURLRequest) returns (GetUserURLResponse);
+  rpc DeleteURL(DeleteURLRequest) returns (DeleteURLResponse);
+  rpc StorageCheck(StorageCheckRequest) returns (StorageCheckResponse);
+}
+

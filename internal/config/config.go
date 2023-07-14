@@ -17,6 +17,7 @@ type Config interface {
 	GetHTTP() *http
 	GetShortURL() *shortURL
 	GetStorage() *storage
+	GetGRPC() *grpc
 }
 
 // HTTP describes the implementation of the http server configuration.
@@ -29,6 +30,14 @@ type HTTP interface {
 	GetSwagger() *swagger
 	GetTLS() *tls
 	GetTrustedSubnet() *net.IPNet
+}
+
+// GRPC describes the implementation of the grpc server configuration.
+type GRPC interface {
+	GetTLS() *tls
+	UseTLS() bool
+	Enabled() bool
+	GetAddress() string
 }
 
 // ShortURL describes the implementation of the URL shortening service configuration.
@@ -67,6 +76,7 @@ type Swagger interface {
 // config implements application configuration.
 type config struct {
 	HTTP     *http     `json:"http"`
+	GRPC     *grpc     `json:"grpc"`
 	ShortURL *shortURL `json:"short_url"`
 	Storage  *storage  `json:"storage"`
 }
@@ -82,6 +92,14 @@ type http struct {
 	TLS           *tls     `json:"tls"`
 	Swagger       *swagger `json:"swagger"`
 	TrustedSubnet *subnet  `json:"trusted_subnet" env:"TRUSTED_SUBNET"`
+}
+
+// grpc implements grpc server configuration.
+type grpc struct {
+	Enable    bool   `json:"enable"`
+	Address   string `json:"server_address" env:"SERVER_ADDRESS"`
+	EnableTLS bool   `json:"enable_tls"`
+	TLS       *tls   `json:"tls"`
 }
 
 // subnet describes ip subnet type.
@@ -110,7 +128,7 @@ type cookie struct {
 	SecretKey string `json:"secret_key" env:"COOKIE_SECRET_KEY"`
 }
 
-// tls implements http server tls configuration.
+// tls implements http/grpc server tls configuration.
 type tls struct {
 	CertPath string `json:"cert_path" env:"TLS_CERT_PATH"`
 	KeyPath  string `json:"key_path" env:"TLS_KET_PATH"`
@@ -162,6 +180,11 @@ func (c *config) GetShortURL() *shortURL {
 // GetStorage implements getting storage configuration.
 func (c *config) GetStorage() *storage {
 	return c.Storage
+}
+
+// GetGRPC implements getting grpc configuration.
+func (c *config) GetGRPC() *grpc {
+	return c.GRPC
 }
 
 // GetScheme implements getting http server scheme (http/https).
@@ -269,6 +292,26 @@ func (s *swagger) GetSchemes() []string {
 	return s.Schemes
 }
 
+// Enabled implements getting information about the need to use grpc service.
+func (g *grpc) Enabled() bool {
+	return g.Enable
+}
+
+// GetTLS implements  getting tls configuration
+func (g *grpc) GetTLS() *tls {
+	return g.TLS
+}
+
+// UseTLS implements getting information about the need to use tls configuration.
+func (g *grpc) UseTLS() bool {
+	return g.EnableTLS
+}
+
+// GetAddress implements getting grpc server address.
+func (g *grpc) GetAddress() string {
+	return g.Address
+}
+
 // NewConfig implements the creation of the application configuration.
 func NewConfig() (*config, error) {
 	cfg := defaultConfig()
@@ -283,7 +326,6 @@ func NewConfig() (*config, error) {
 			return nil, err
 		}
 	}
-
 	if err := env.Parse(cfg); err != nil {
 		return nil, err
 	}
@@ -321,6 +363,14 @@ func defaultConfig() *config {
 			},
 			Swagger: &swagger{
 				Title: "Shortener API",
+			},
+		},
+		GRPC: &grpc{
+			Address:   "127.0.0.1:8080",
+			EnableTLS: false,
+			TLS: &tls{
+				CertPath: "./certs/server.crt",
+				KeyPath:  "./certs/server.key",
 			},
 		},
 		Storage: &storage{

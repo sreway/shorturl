@@ -38,7 +38,7 @@ func init() {
 
 	buildInfo()
 	flag.StringVar(&httpServerAddress, "a", httpServerAddress,
-		"http server address: scheme:host:port")
+		"http/grpc server address: scheme:host:port")
 	flag.StringVar(&shortenBaseURL, "b", shortenBaseURL, "shorten base url")
 	flag.StringVar(&storageCachePath, "f", storageCachePath, "storage cache file path")
 	flag.StringVar(&storagePostgresDSN, "d", storagePostgresDSN, "storage postgres dsn")

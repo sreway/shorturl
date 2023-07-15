@@ -100,8 +100,7 @@ func Run(ctx context.Context) {
 			}
 		}()
 
-		switch cfg.GetGRPC().Enabled() {
-		case true:
+		if cfg.GetGRPC().Enabled() {
 			var err error
 			srv, err := grpc.New(service)
 			if err != nil {
@@ -118,7 +117,7 @@ func Run(ctx context.Context) {
 				exit <- 1
 				return
 			}
-		case false:
+		} else {
 			srv := http.New(service)
 			err := srv.Run(ctx, cfg.GetHTTP())
 			if err != nil {

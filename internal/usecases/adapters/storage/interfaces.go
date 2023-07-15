@@ -19,5 +19,7 @@ type URL interface {
 	Batch(ctx context.Context, urls []entity.URL) error
 	BatchDelete(ctx context.Context, urls []entity.URL) error
 	Ping(ctx context.Context) error
+	GetUserCount(ctx context.Context) (int, error)
+	GetURLCount(ctx context.Context) (int, error)
 	Close() error
 }

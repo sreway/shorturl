@@ -4,6 +4,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/url"
 	"os"
 	"time"
@@ -16,6 +17,7 @@ type Config interface {
 	GetHTTP() *http
 	GetShortURL() *shortURL
 	GetStorage() *storage
+	GetGRPC() *grpc
 }
 
 // HTTP describes the implementation of the http server configuration.
@@ -27,6 +29,15 @@ type HTTP interface {
 	GetCookie() *cookie
 	GetSwagger() *swagger
 	GetTLS() *tls
+	GetTrustedSubnet() *net.IPNet
+}
+
+// GRPC describes the implementation of the grpc server configuration.
+type GRPC interface {
+	GetTLS() *tls
+	UseTLS() bool
+	Enabled() bool
+	GetAddress() string
 }
 
 // ShortURL describes the implementation of the URL shortening service configuration.
@@ -65,6 +76,7 @@ type Swagger interface {
 // config implements application configuration.
 type config struct {
 	HTTP     *http     `json:"http"`
+	GRPC     *grpc     `json:"grpc"`
 	ShortURL *shortURL `json:"short_url"`
 	Storage  *storage  `json:"storage"`
 }
@@ -79,6 +91,35 @@ type http struct {
 	Cookie        *cookie  `json:"cookie"`
 	TLS           *tls     `json:"tls"`
 	Swagger       *swagger `json:"swagger"`
+	TrustedSubnet *subnet  `json:"trusted_subnet" env:"TRUSTED_SUBNET"`
+}
+
+// grpc implements grpc server configuration.
+type grpc struct {
+	Enable    bool   `json:"enable"`
+	Address   string `json:"server_address" env:"SERVER_ADDRESS"`
+	EnableTLS bool   `json:"enable_tls"`
+	TLS       *tls   `json:"tls"`
+}
+
+// subnet describes ip subnet type.
+type subnet net.IPNet
+
+// UnmarshalText implements custom unmarshal subnet data.
+func (s *subnet) UnmarshalText(text []byte) error {
+	if len(text) == 0 {
+		*s = subnet(net.IPNet{})
+		return nil
+	}
+
+	_, p, err := net.ParseCIDR(string(text))
+	if err != nil {
+		return err
+	}
+
+	*s = subnet(*p)
+
+	return nil
 }
 
 // cookie implements http server cookies configuration.
@@ -87,7 +128,7 @@ type cookie struct {
 	SecretKey string `json:"secret_key" env:"COOKIE_SECRET_KEY"`
 }
 
-// tls implements http server tls configuration.
+// tls implements http/grpc server tls configuration.
 type tls struct {
 	CertPath string `json:"cert_path" env:"TLS_CERT_PATH"`
 	KeyPath  string `json:"key_path" env:"TLS_KET_PATH"`
@@ -141,6 +182,11 @@ func (c *config) GetStorage() *storage {
 	return c.Storage
 }
 
+// GetGRPC implements getting grpc configuration.
+func (c *config) GetGRPC() *grpc {
+	return c.GRPC
+}
+
 // GetScheme implements getting http server scheme (http/https).
 func (h *http) GetScheme() string {
 	return h.Scheme
@@ -174,6 +220,11 @@ func (h *http) GetCompressLevel() int {
 // GetSwagger implements getting Swagger configuration.
 func (h *http) GetSwagger() *swagger {
 	return h.Swagger
+}
+
+// GetTrustedSubnet implements getting trusted subnet.
+func (h *http) GetTrustedSubnet() *net.IPNet {
+	return (*net.IPNet)(h.TrustedSubnet)
 }
 
 // GetBaseURL implements getting the base URL for the URL shortening service.
@@ -241,6 +292,26 @@ func (s *swagger) GetSchemes() []string {
 	return s.Schemes
 }
 
+// Enabled implements getting information about the need to use grpc service.
+func (g *grpc) Enabled() bool {
+	return g.Enable
+}
+
+// GetTLS implements  getting tls configuration
+func (g *grpc) GetTLS() *tls {
+	return g.TLS
+}
+
+// UseTLS implements getting information about the need to use tls configuration.
+func (g *grpc) UseTLS() bool {
+	return g.EnableTLS
+}
+
+// GetAddress implements getting grpc server address.
+func (g *grpc) GetAddress() string {
+	return g.Address
+}
+
 // NewConfig implements the creation of the application configuration.
 func NewConfig() (*config, error) {
 	cfg := defaultConfig()
@@ -255,7 +326,6 @@ func NewConfig() (*config, error) {
 			return nil, err
 		}
 	}
-
 	if err := env.Parse(cfg); err != nil {
 		return nil, err
 	}
@@ -293,6 +363,14 @@ func defaultConfig() *config {
 			},
 			Swagger: &swagger{
 				Title: "Shortener API",
+			},
+		},
+		GRPC: &grpc{
+			Address:   "127.0.0.1:8080",
+			EnableTLS: false,
+			TLS: &tls{
+				CertPath: "./certs/server.crt",
+				KeyPath:  "./certs/server.key",
 			},
 		},
 		Storage: &storage{

@@ -10,6 +10,7 @@ import (
 	"golang.org/x/exp/slog"
 
 	"github.com/sreway/shorturl/internal/config"
+	"github.com/sreway/shorturl/internal/delivery/grpc"
 	"github.com/sreway/shorturl/internal/delivery/http"
 	"github.com/sreway/shorturl/internal/repository/storage/cache"
 	"github.com/sreway/shorturl/internal/repository/storage/postgres"
@@ -88,7 +89,6 @@ func Run(ctx context.Context) {
 		}()
 
 		service := shortener.New(repo, configShortURL)
-		srv := http.New(service)
 
 		go func() {
 			err = service.ProcQueue(ctx, cfg.GetShortURL().GetCheckTaskInterval())
@@ -100,12 +100,32 @@ func Run(ctx context.Context) {
 			}
 		}()
 
-		err = srv.Run(ctx, cfg.GetHTTP())
-		if err != nil {
-			log.Error("failed run delivery", err)
-			stop()
-			exit <- 1
-			return
+		if cfg.GetGRPC().Enabled() {
+			var err error
+			srv, err := grpc.New(service)
+			if err != nil {
+				log.Error("failed initialize grpc server", err)
+				stop()
+				exit <- 1
+				return
+			}
+
+			err = srv.Run(ctx, cfg.GetGRPC())
+			if err != nil {
+				log.Error("failed run grpc server", err)
+				stop()
+				exit <- 1
+				return
+			}
+		} else {
+			srv := http.New(service)
+			err := srv.Run(ctx, cfg.GetHTTP())
+			if err != nil {
+				log.Error("failed run delivery", err)
+				stop()
+				exit <- 1
+				return
+			}
 		}
 	}()
 	go func() {

@@ -9,6 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	stats "github.com/sreway/shorturl/internal/domain/stats"
 	url "github.com/sreway/shorturl/internal/domain/url"
 )
 
@@ -77,6 +78,21 @@ func (m *MockShortener) DeleteURL(ctx context.Context, userID string, urlID []st
 func (mr *MockShortenerMockRecorder) DeleteURL(ctx, userID, urlID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteURL", reflect.TypeOf((*MockShortener)(nil).DeleteURL), ctx, userID, urlID)
+}
+
+// GetStats mocks base method.
+func (m *MockShortener) GetStats(ctx context.Context) (stats.Collection, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStats", ctx)
+	ret0, _ := ret[0].(stats.Collection)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStats indicates an expected call of GetStats.
+func (mr *MockShortenerMockRecorder) GetStats(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStats", reflect.TypeOf((*MockShortener)(nil).GetStats), ctx)
 }
 
 // GetURL mocks base method.

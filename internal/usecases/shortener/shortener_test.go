@@ -461,3 +461,55 @@ func Test_useCase_DeleteURL(t *testing.T) {
 		})
 	}
 }
+
+func Test_useCase_GetStats(t *testing.T) {
+	type fields struct {
+		urlCount  int
+		userCount int
+		repoErr   error
+	}
+
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{
+			name: "positive get stats",
+			fields: fields{
+				urlCount:  5,
+				userCount: 4,
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "negative get stats",
+			fields: fields{
+				repoErr: errors.New("some error"),
+			},
+			wantErr: assert.Error,
+		},
+	}
+	anyMock := gomock.Any()
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	ctx := context.Background()
+	for _, tt := range tests {
+		cfg, err := config.NewConfig()
+		assert.NoError(t, err)
+		repo := repoMock.NewMockURL(ctl)
+		repo.EXPECT().GetUserCount(anyMock).Return(tt.fields.userCount, tt.fields.repoErr).AnyTimes()
+		repo.EXPECT().GetURLCount(anyMock).Return(tt.fields.urlCount, tt.fields.repoErr).AnyTimes()
+		uc := New(repo, cfg.GetShortURL())
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := uc.GetStats(ctx)
+			if tt.wantErr(t, err, "GetStat") {
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, tt.fields.userCount, got.User().Count())
+			assert.Equal(t, tt.fields.urlCount, got.URL().Count())
+		})
+	}
+}

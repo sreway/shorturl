@@ -4,7 +4,6 @@ package postgres
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/url"
 	"os"
 
@@ -117,7 +116,7 @@ func (r *repo) Get(ctx context.Context, id uuid.UUID) (entity.URL, error) {
 func (r *repo) GetByUserID(ctx context.Context, userID uuid.UUID) ([]entity.URL, error) {
 	urls := make([]entity.URL, 0)
 
-	query := "SELECT id, original_url FROM urls WHERE user_id = $1"
+	query := "SELECT id, original_url, deleted FROM urls WHERE user_id = $1"
 	rows, err := r.pool.Query(ctx, query, userID)
 	if err != nil {
 		return nil, err
@@ -125,10 +124,11 @@ func (r *repo) GetByUserID(ctx context.Context, userID uuid.UUID) ([]entity.URL,
 	defer rows.Close()
 	for rows.Next() {
 		var (
-			id     uuid.UUID
-			rawURL string
+			id      uuid.UUID
+			rawURL  string
+			deleted bool
 		)
-		if err = rows.Scan(&id, &rawURL); err != nil {
+		if err = rows.Scan(&id, &rawURL, &deleted); err != nil {
 			return nil, err
 		}
 
@@ -141,8 +141,8 @@ func (r *repo) GetByUserID(ctx context.Context, userID uuid.UUID) ([]entity.URL,
 
 		u := entity.NewURL(id, userID)
 		u.SetLongURL(*value)
+		u.SetDeleted(deleted)
 		urls = append(urls, u)
-		fmt.Println(urls)
 	}
 
 	return urls, nil
@@ -207,6 +207,28 @@ func (r *repo) BatchDelete(ctx context.Context, urls []entity.URL) error {
 	}
 
 	return tx.Commit(ctx)
+}
+
+// GetUserCount implements the getting user count stat.
+func (r *repo) GetUserCount(ctx context.Context) (int, error) {
+	var counter int
+	query := "SELECT COUNT(DISTINCT user_id) FROM urls;"
+	err := r.pool.QueryRow(ctx, query).Scan(&counter)
+	if err != nil {
+		return 0, err
+	}
+	return counter, nil
+}
+
+// GetURLCount implements the getting url count stat.
+func (r *repo) GetURLCount(ctx context.Context) (int, error) {
+	var counter int
+	query := "SELECT COUNT(id) FROM urls;"
+	err := r.pool.QueryRow(ctx, query).Scan(&counter)
+	if err != nil {
+		return 0, err
+	}
+	return counter, nil
 }
 
 // migrate implements run migrations.

@@ -11,6 +11,7 @@ import (
 	"golang.org/x/exp/slog"
 
 	"github.com/sreway/shorturl/internal/config"
+	"github.com/sreway/shorturl/internal/domain/stats"
 	entity "github.com/sreway/shorturl/internal/domain/url"
 	"github.com/sreway/shorturl/internal/usecases/adapters/storage"
 )
@@ -215,6 +216,26 @@ func (uc *useCase) DeleteURL(_ context.Context, userID string, urlID []string) e
 	uc.taskQueue <- *NewTask(deleteAction, urls)
 
 	return nil
+}
+
+// GetStats implements getting stats of the short URLs service.
+func (uc *useCase) GetStats(ctx context.Context) (stats.Collection, error) {
+	userCount, err := uc.storage.GetUserCount(ctx)
+	if err != nil {
+		uc.logger.Error("failed get stats user count", err)
+		return nil, err
+	}
+
+	urlCount, err := uc.storage.GetURLCount(ctx)
+	if err != nil {
+		uc.logger.Error("failed get stats url count", err)
+		return nil, err
+	}
+
+	userStats := stats.NewUserStats(stats.UserCount(userCount))
+	urlStats := stats.NewURLStats(stats.URLCount(urlCount))
+	collection := stats.NewCollectionStats(userStats, urlStats)
+	return collection, nil
 }
 
 // New implements the creation of a URL shortening service.

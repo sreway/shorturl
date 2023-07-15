@@ -29,19 +29,22 @@ func init() {
 		storageCachePath   string
 		storagePostgresDSN string
 		jsonConfig         string
+		trustedSubnet      string
 		lookupEnv          = []string{
-			"BASE_URL", "SERVER_ADDRESS", "FILE_STORAGE_PATH", "DATABASE_DSN", "ENABLE_HTTPS", "CONFIG",
+			"BASE_URL", "SERVER_ADDRESS", "FILE_STORAGE_PATH", "DATABASE_DSN", "ENABLE_HTTPS",
+			"CONFIG", "TRUSTED_SUBNET",
 		}
 	)
 
 	buildInfo()
 	flag.StringVar(&httpServerAddress, "a", httpServerAddress,
-		"http server address: scheme:host:port")
+		"http/grpc server address: scheme:host:port")
 	flag.StringVar(&shortenBaseURL, "b", shortenBaseURL, "shorten base url")
 	flag.StringVar(&storageCachePath, "f", storageCachePath, "storage cache file path")
 	flag.StringVar(&storagePostgresDSN, "d", storagePostgresDSN, "storage postgres dsn")
 	flag.BoolVar(&enableHTTPS, "s", false, "enable https")
 	flag.StringVar(&jsonConfig, "c", jsonConfig, "json config file path")
+	flag.StringVar(&trustedSubnet, "t", trustedSubnet, "subnet in CIDR format")
 	flag.Parse()
 
 	for _, env := range lookupEnv {
@@ -63,6 +66,8 @@ func init() {
 			_ = os.Setenv(env, strconv.FormatBool(enableHTTPS))
 		case "CONFIG":
 			_ = os.Setenv(env, jsonConfig)
+		case "TRUSTED_SUBNET":
+			_ = os.Setenv(env, trustedSubnet)
 		}
 	}
 }

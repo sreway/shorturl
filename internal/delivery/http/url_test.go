@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
+	statMock "github.com/sreway/shorturl/internal/domain/stats/mock"
 	"github.com/sreway/shorturl/internal/domain/url"
 	urlMock "github.com/sreway/shorturl/internal/domain/url/mock"
 	usecasesMock "github.com/sreway/shorturl/internal/usecases/mock"
@@ -792,5 +794,116 @@ func Test_delivery_deleteURL(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, tt.want.response, string(resBody))
 		})
+	}
+}
+
+func Test_delivery_stats(t *testing.T) {
+	type want struct {
+		code int
+		body string
+	}
+
+	type args struct {
+		headers map[string]string
+	}
+
+	type fields struct {
+		useCaseErr    error
+		trustedSubnet string
+		urlCount      int
+		userCount     int
+	}
+
+	uri := "/api/internal/stats"
+	method := http.MethodGet
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   want
+	}{
+		{
+			name: "positive get stats",
+			args: args{
+				headers: map[string]string{
+					"X-Real-IP": "192.168.88.1",
+				},
+			},
+			fields: fields{
+				trustedSubnet: "192.168.88.0/24",
+				urlCount:      2,
+				userCount:     1,
+			},
+			want: want{
+				code: http.StatusOK,
+				body: "{\"urls\":2,\"users\":1}\n",
+			},
+		},
+		{
+			name: "negative get stats (X-Real-IP header not set)",
+			fields: fields{
+				trustedSubnet: "192.168.88.0/24",
+			},
+			want: want{
+				code: http.StatusForbidden,
+				body: "{\"error\":\"missing X-Real-IP header\"}\n",
+			},
+		},
+		{
+			name: "negative get stats (trusted subnet not setup)",
+			want: want{
+				code: http.StatusForbidden,
+				body: "{\"error\":\"trusted subnet not setup\"}\n",
+			},
+		},
+		{
+			name: "negative get stats (ip not allowed)",
+			args: args{
+				headers: map[string]string{
+					"X-Real-IP": "192.168.89.1",
+				},
+			},
+			fields: fields{
+				trustedSubnet: "192.168.88.0/24",
+			},
+			want: want{
+				code: http.StatusForbidden,
+				body: "{\"error\":\"ip not allowed\"}\n",
+			},
+		},
+	}
+
+	anyMock := gomock.Any()
+	userID := uuid.New().String()
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	for _, tt := range tests {
+		uc := usecasesMock.NewMockShortener(ctl)
+		collection := statMock.NewMockCollection(ctl)
+		userStats := statMock.NewMockUserStats(ctl)
+		urlStats := statMock.NewMockURLStats(ctl)
+		userStats.EXPECT().Count().Return(tt.fields.userCount).AnyTimes()
+		urlStats.EXPECT().Count().Return(tt.fields.urlCount).AnyTimes()
+		collection.EXPECT().User().Return(userStats).AnyTimes()
+		collection.EXPECT().URL().Return(urlStats).AnyTimes()
+		uc.EXPECT().GetStats(anyMock).Return(collection, tt.fields.useCaseErr).AnyTimes()
+		d := New(uc)
+		_, ipnet, _ := net.ParseCIDR(tt.fields.trustedSubnet)
+		request := httptest.NewRequest(method, uri, nil)
+		for k, v := range tt.args.headers {
+			request.Header.Set(k, v)
+		}
+		request = request.WithContext(context.WithValue(request.Context(), ctxKeyUserID{}, userID))
+		w := httptest.NewRecorder()
+		h := http.HandlerFunc(d.stats)
+		tsm := trustedSubnet(ipnet)
+		tsm(h).ServeHTTP(w, request)
+		resp := w.Result()
+		defer resp.Body.Close()
+		assert.Equal(t, tt.want.code, resp.StatusCode)
+		resBody, err := io.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		assert.Equal(t, tt.want.body, string(resBody))
 	}
 }

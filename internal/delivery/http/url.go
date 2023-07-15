@@ -352,7 +352,6 @@ func (d *delivery) deleteURL(w http.ResponseWriter, r *http.Request) {
 // @Success 200
 // @Failure 400 {object} errResponse
 // @Failure 500 {object} errResponse
-// @Failure 501 {object} errResponse
 // @Router /ping [get]
 func (d *delivery) ping(w http.ResponseWriter, r *http.Request) {
 	err := d.shortener.StorageCheck(r.Context())
@@ -362,6 +361,45 @@ func (d *delivery) ping(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+}
+
+// stats godoc
+// @Summary shorturl statistics
+// @Description shorturl statistics
+// @ID stats
+// @Produce application/json
+// @Success 200
+// @Failure 400 {object} errResponse
+// @Failure 403 {object} errResponse
+// @Failure 500 {object} errResponse
+// @Router /internal/stats [get]
+func (d *delivery) stats(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userID, ok := r.Context().Value(ctxKeyUserID{}).(string)
+	if !ok {
+		d.logger.Error("invalid user id", ErrInvalidRequest,
+			slog.String("userID", userID), slog.String("handler", "stats"))
+		d.handelErrURL(w, r, ErrInvalidRequest)
+		return
+	}
+
+	stats, err := d.shortener.GetStats(r.Context())
+	if err != nil {
+		d.logger.Error("failed getting stats", err, slog.String("handler", "stats"))
+		d.handelErrURL(w, r, ErrInternalServer)
+		return
+	}
+
+	res := new(statsResponse)
+	res.URLs = stats.URL().Count()
+	res.Users = stats.User().Count()
+
+	if err = json.NewEncoder(w).Encode(res); err != nil {
+		d.logger.Error("failed encode response", err, slog.String("handler", "stats"))
+		d.handelErrURL(w, r, ErrInternalServer)
+		return
+	}
 }
 
 func (d *delivery) handelErrURL(w http.ResponseWriter, r *http.Request, err error) {

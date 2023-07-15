@@ -4,6 +4,8 @@ package usecases
 import (
 	"context"
 
+	"github.com/sreway/shorturl/internal/domain/stats"
+
 	"github.com/sreway/shorturl/internal/domain/url"
 )
 
@@ -17,4 +19,5 @@ type Shortener interface {
 	GetUserURLs(ctx context.Context, userID string) ([]url.URL, error)
 	DeleteURL(ctx context.Context, userID string, urlID []string) error
 	StorageCheck(ctx context.Context) error
+	GetStats(ctx context.Context) (stats.Collection, error)
 }

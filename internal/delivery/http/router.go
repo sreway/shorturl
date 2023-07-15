@@ -18,11 +18,11 @@ func (d *delivery) initRouter(http config.HTTP) *chi.Mux {
 
 	router := chi.NewRouter()
 	d.useMiddleware(http, router)
-	d.routerURL(router)
+	d.routerURL(http, router)
 	return router
 }
 
-func (d *delivery) routerURL(r chi.Router) {
+func (d *delivery) routerURL(http config.HTTP, r chi.Router) {
 	r.Route("/", func(r chi.Router) {
 		r.Post("/", d.addURL)
 		r.Get("/{id}", d.getURL)
@@ -37,6 +37,10 @@ func (d *delivery) routerURL(r chi.Router) {
 		r.Route("/user", func(r chi.Router) {
 			r.Get("/urls", d.userURL)
 			r.Delete("/urls", d.deleteURL)
+		})
+		r.Route("/internal/stats", func(r chi.Router) {
+			r.Use(trustedSubnet(http.GetTrustedSubnet()))
+			r.Get("/", d.stats)
 		})
 	})
 
